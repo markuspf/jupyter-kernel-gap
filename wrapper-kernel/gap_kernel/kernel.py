@@ -52,12 +52,12 @@ class GAPKernel(Kernel):
         # so that bash and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
-            self.gapwrapper = replwrap.bash()
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -b', u'gap>', None, new_prompt=u'gap>', continuation_prompt=u'++')
         finally:
             signal.signal(signal.SIGINT, sig)
 
         # Register Bash function to write image data to temporary file
-        self.gapwrapper.run_command(image_setup_cmd)
+        #self.gapwrapper.run_command(image_setup_cmd)
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
