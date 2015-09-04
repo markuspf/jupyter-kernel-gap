@@ -2,7 +2,8 @@
 A Jupyter kernel for GAP -- possibly several implementations
 
 It seems like we can do a native implementation in HPCGAP and an implementation involving a Python proxy process for
-GAP4.
+GAP4. It might also be possible to do a proxy-free implementation in GAP4 by spawning a purely C thread inside the kernel
+to handle heartbeat.
 
 Notes from Min Ragan-Kelley's Q&A session on the Jupyter kernel:
 
