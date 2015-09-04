@@ -10,35 +10,13 @@ import re
 import signal
 import urllib
 
-__version__ = '0.1'
-
-
-change_prompt_cmd_lb = """
-  Unbind(PrintPromptHook);
-  PrintPromptHook := function()
-    local cp;
-    cp := CPROMPT();
-    if cp = "gap> " then
-      cp := "gap# ";
-    fi;
-    if Length(cp)>0 and cp[1] = 'b' then
-      cp := "brk#";
-    fi;
-    if Length(cp)>0 and cp[1] = '>' then
-      cp := "#";
-    fi;
-    PRINT_CPROMPT(cp);
-  end;
-"""
-
-change_prompt_cmd = 'PrintPromptHook := function() local cp; cp := CPROMPT(); if cp = "gap> " then cp := "gap# "; fi; if Length(cp) > 0 and cp[1] = \'>\' then cp := "+"; fi; PRINT_CPROMPT(cp); end;\n'
+__version__ = '0.3'
 
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 from .images import (
     extract_image_filenames, display_data_for_image, image_setup_cmd
 )
-
 
 class GAPKernel(Kernel):
     implementation = 'gap_kernel'
@@ -73,11 +51,11 @@ class GAPKernel(Kernel):
         # so that bash and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -b', u'gap> ',
-                              change_prompt_cmd,
-                              new_prompt=u'gap#',
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T gap_kernel/setup.g', u'gap# ',
+                              None,
+                              None,
                               continuation_prompt=u'+')
-        #    self.gapwrapper.run_command("\n\n");
+            self.gapwrapper.run_command("\n");
         finally:
             signal.signal(signal.SIGINT, sig)
 
