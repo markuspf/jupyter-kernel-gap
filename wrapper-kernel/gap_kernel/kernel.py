@@ -12,6 +12,27 @@ import urllib
 
 __version__ = '0.1'
 
+
+change_prompt_cmd_lb = """
+  Unbind(PrintPromptHook);
+  PrintPromptHook := function()
+    local cp;
+    cp := CPROMPT();
+    if cp = "gap> " then
+      cp := "gap# ";
+    fi;
+    if Length(cp)>0 and cp[1] = 'b' then
+      cp := "brk#";
+    fi;
+    if Length(cp)>0 and cp[1] = '>' then
+      cp := "#";
+    fi;
+    PRINT_CPROMPT(cp);
+  end;
+"""
+
+change_prompt_cmd = 'PrintPromptHook := function() local cp; cp := CPROMPT(); if cp = "gap> " then cp := "gap# "; fi; if Length(cp) > 0 and cp[1] = \'>\' then cp := "+"; fi; PRINT_CPROMPT(cp); end;\n'
+
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 from .images import (
@@ -52,7 +73,11 @@ class GAPKernel(Kernel):
         # so that bash and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -b', u'gap>', None, new_prompt=u'gap>', continuation_prompt=u'++')
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -b', u'gap> ',
+                              change_prompt_cmd,
+                              new_prompt=u'gap#',
+                              continuation_prompt=u'+')
+        #    self.gapwrapper.run_command("\n\n");
         finally:
             signal.signal(signal.SIGINT, sig)
 
@@ -67,7 +92,9 @@ class GAPKernel(Kernel):
 
         interrupted = False
         try:
+            print("running command: %s" % (code.rstrip()))
             output = self.gapwrapper.run_command(code.rstrip(), timeout=None)
+            print("got output %s" % output)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -98,7 +125,7 @@ class GAPKernel(Kernel):
             return {'status': 'abort', 'execution_count': self.execution_count}
 
         try:
-            exitcode = int(self.bashwrapper.run_command('echo $?').rstrip())
+            exitcode = int(self.gapwrapper.run_command('\n').rstrip())
         except Exception:
             exitcode = 1
 
