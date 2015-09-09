@@ -6,12 +6,6 @@ import os
 
 _TEXT_SAVED_IMAGE = "gap_kernel: saved image data to:"
 
-image_setup_cmd = """
-sh /home/makx/ac/gap/bin/gap.sh -b
-"""
-
-# % _TEXT_SAVED_IMAGE
-
 def display_data_for_image(filename):
     with open(filename, 'rb') as f:
         image = f.read()

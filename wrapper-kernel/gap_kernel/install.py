@@ -8,7 +8,7 @@ from IPython.utils.tempdir import TemporaryDirectory
 kernel_json = {"argv":[sys.executable,"-m","gap_kernel", "-f", "{connection_file}"],
  "display_name":"GAP",
  "language":"gap",
- "codemirror_mode":"shell",
+ "codemirror_mode":"gap", # note that this does not exist yet
  "env":{"PS1": "$"}
 }
 
