@@ -2,7 +2,7 @@ from IPython.kernel.zmq.kernelbase import Kernel
 from pexpect import replwrap, EOF
 
 from subprocess import check_output
-from os import unlink
+from os import unlink, path
 
 import base64
 import imghdr
@@ -48,7 +48,8 @@ class GAPKernel(Kernel):
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
             # setup.g contains functions needed for Jupyter interfacing
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T gap_kernel/setup.g'
+            setupg = path.dirname(path.abspath(__file__))
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T %s/setup.g' % (setupg)
                               , u'gap|| '
                               , None
                               , None
