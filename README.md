@@ -22,3 +22,4 @@ To use it, use one of the following:
     ipython console --kernel gap
 ```
 
+Note that this kernel assumes that `gap.sh' is in the `PATH'.
