@@ -9,17 +9,16 @@ and architecture might change on a day-to-day basis without notice.
 The `wrapper-kernel' is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
 to install
 
-.. code:: shell
-
+```shell
     pip install gap_kernel
     python -m gap_kernel.install
+```
 
 To use it, use one of the following:
 
-.. code:: shell
-
+```shell
     ipython notebook
     ipython qtconsole --kernel gap
     ipython console --kernel gap
-
+```
 
