@@ -32,12 +32,12 @@ class GAPKernel(Kernel):
     @property
     def banner(self):
         if self._banner is None:
-            self._banner = "GAP kernel"
+            self._banner = "GAP Jupyter kernel"
         return self._banner
 
     language_info = {'name': 'gap',
                      'codemirror_mode': 'shell',
-                     'mimetype': 'text/x-sh',
+                     'mimetype': 'text/x-gap',
                      'file_extension': '.g'}
 
     def __init__(self, **kwargs):
@@ -48,19 +48,18 @@ class GAPKernel(Kernel):
         # Signal handlers are inherited by forked processes, and we can't easily
         # reset it from the subprocess. Since kernelapp ignores SIGINT except in
         # message handlers, we need to temporarily reset the SIGINT handler here
-        # so that bash and its children are interruptible.
+        # so that gap and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T gap_kernel/setup.g', u'gap# ',
-                              None,
-                              None,
-                              continuation_prompt=u'+')
+            # setup.g contains functions needed for Jupyter interfacing
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T gap_kernel/setup.g'
+                              , u'gap|| '
+                              , None
+                              , None
+                              , continuation_prompt=u'|| ')
             self.gapwrapper.run_command("\n");
         finally:
             signal.signal(signal.SIGINT, sig)
-
-        # Register Bash function to write image data to temporary file
-        #self.gapwrapper.run_command(image_setup_cmd)
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
@@ -70,9 +69,7 @@ class GAPKernel(Kernel):
 
         interrupted = False
         try:
-            print("running command: %s" % (code.rstrip()))
             output = self.gapwrapper.run_command(code.rstrip(), timeout=None)
-            print("got output %s" % output)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -114,6 +111,7 @@ class GAPKernel(Kernel):
             return {'status': 'ok', 'execution_count': self.execution_count,
                     'payload': [], 'user_expressions': {}}
 
+    # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
         code = code[:cursor_pos]
         default = {'matches': [], 'cursor_start': 0,
@@ -131,19 +129,11 @@ class GAPKernel(Kernel):
         token = tokens[-1]
         start = cursor_pos - len(token)
 
-        if token[0] == '$':
-            # complete variables
-            cmd = 'compgen -A arrayvar -A export -A variable %s' % token[1:] # strip leading $
-            output = self.bashwrapper.run_command(cmd).rstrip()
-            completions = set(output.split())
-            # append matches including leading $
-            matches.extend(['$'+c for c in completions])
-        else:
-            # complete functions and builtins
-            cmd = 'compgen -cdfa %s' % token
-            output = self.bashwrapper.run_command(cmd).rstrip()
-            matches.extend(output.split())
-            
+        # complete bound global variables
+        cmd = 'JupyterCompletion("%s");' % token
+        output = self.gapwrapper.run_command(cmd).rstrip()
+        matches.extend(output.split())
+
         if not matches:
             return default
         matches = [m for m in matches if m.startswith(token)]
