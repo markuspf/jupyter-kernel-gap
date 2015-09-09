@@ -5,7 +5,7 @@ import sys
 from IPython.kernel.kernelspec import install_kernel_spec
 from IPython.utils.tempdir import TemporaryDirectory
 
-kernel_json = {"argv":[sys.executable,"-m","gap_kernel", "-f", "{connection_file}"],
+kernel_json = {"argv":[sys.executable,"-m","jupyter_gap_wrapper", "-f", "{connection_file}"],
  "display_name":"GAP",
  "language":"gap",
  "codemirror_mode":"gap", # note that this does not exist yet

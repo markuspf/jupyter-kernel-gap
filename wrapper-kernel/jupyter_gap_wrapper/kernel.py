@@ -15,7 +15,7 @@ __version__ = '0.3'
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 class GAPKernel(Kernel):
-    implementation = 'gap_kernel'
+    implementation = 'jupyter_gap_wrapper'
     implementation_version = __version__
 
     @property
@@ -49,7 +49,7 @@ class GAPKernel(Kernel):
         try:
             # setup.g contains functions needed for Jupyter interfacing
             setupg = path.dirname(path.abspath(__file__))
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T %s/setup.g' % (setupg)
+            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T %s/gap/setup.g' % (setupg)
                               , u'gap|| '
                               , None
                               , None
