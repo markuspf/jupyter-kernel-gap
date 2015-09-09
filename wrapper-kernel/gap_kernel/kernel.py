@@ -14,10 +14,6 @@ __version__ = '0.3'
 
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
-from .images import (
-    extract_image_filenames, display_data_for_image, image_setup_cmd
-)
-
 class GAPKernel(Kernel):
     implementation = 'gap_kernel'
     implementation_version = __version__
@@ -32,11 +28,11 @@ class GAPKernel(Kernel):
     @property
     def banner(self):
         if self._banner is None:
-            self._banner = "GAP Jupyter kernel"
+            self._banner = "GAP 4.7 Jupyter kernel"
         return self._banner
 
     language_info = {'name': 'gap',
-                     'codemirror_mode': 'shell',
+                     'codemirror_mode': 'gap', # note that this does not exist yet
                      'mimetype': 'text/x-gap',
                      'file_extension': '.g'}
 
@@ -80,21 +76,9 @@ class GAPKernel(Kernel):
             self._start_gap()
 
         if not silent:
-            image_filenames, output = extract_image_filenames(output)
-
             # Send standard output
             stream_content = {'name': 'stdout', 'text': output}
             self.send_response(self.iopub_socket, 'stream', stream_content)
-
-            # Send images, if any
-            for filename in image_filenames:
-                try:
-                    data = display_data_for_image(filename)
-                except ValueError as e:
-                    message = {'name': 'stdout', 'text': str(e)}
-                    self.send_response(self.iopub_socket, 'stream', message)
-                else:
-                    self.send_response(self.iopub_socket, 'display_data', data)
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
