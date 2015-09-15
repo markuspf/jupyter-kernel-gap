@@ -49,7 +49,13 @@ class GAPKernel(Kernel):
         try:
             # setup.g contains functions needed for Jupyter interfacing
             setupg = path.dirname(path.abspath(__file__))
-            self.gapwrapper = replwrap.REPLWrapper('gap.sh -n -b -T %s/gap/setup.g' % (setupg)
+            if pexpect.which( 'gap' ) != None:
+                gap_run_command = pexpect.which( 'gap' )
+            elif pexpect.which( 'gap.sh' ) != None:
+                gap_run_command = pexpect.which( 'gap.sh' )
+            else:
+                raise NameError( 'gap executable not found')
+            self.gapwrapper = replwrap.REPLWrapper( gap_run_command + ' -n -b -T %s/gap/setup.g' % (setupg)
                               , u'gap|| '
                               , None
                               , None
