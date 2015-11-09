@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from IPython.kernel.kernelspec import install_kernel_spec
+from jupyter_client.kernelspec import install_kernel_spec
 from IPython.utils.tempdir import TemporaryDirectory
 
 kernel_json = {"argv":[sys.executable,"-m","jupyter_gap_wrapper", "-f", "{connection_file}"],
@@ -19,7 +19,7 @@ def install_my_kernel_spec(user=True):
             json.dump(kernel_json, f, sort_keys=True)
         # TODO: Copy resources once they're specified
 
-        print('Installing IPython kernel spec')
+        print('Installing Jupyter kernel spec from')
         install_kernel_spec(td, 'gap', user=user, replace=True)
 
 def main(argv=None):
