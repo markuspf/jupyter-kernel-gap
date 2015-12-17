@@ -34,3 +34,11 @@ function(tok)
     fi;
   od; 
 end);
+
+# The following are needed to make the help system
+# sort of play nice with the wrapper kernel
+SetUserPreference("browse", "SelectHelpMatches", false);
+SetUserPreference("Pager", "cat");
+SetUserPreference("PagerOptions", "");
+
+
