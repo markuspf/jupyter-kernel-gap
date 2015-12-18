@@ -72,7 +72,7 @@ class GAPKernel(Kernel):
 
         interrupted = False
         try:
-            output = self.gapwrapper.run_command(code.rstrip() + " ;", timeout=None)
+            output = self.gapwrapper.run_command(code.rstrip().replace('\n', ' ') + " ;", timeout=None)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
