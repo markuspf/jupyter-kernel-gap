@@ -35,6 +35,11 @@ class GAPKernel(Kernel):
                      'codemirror_mode': 'gap', # note that this does not exist yet
                      'mimetype': 'text/x-gap',
                      'file_extension': '.g'}
+    
+    help_links = [ { 'text': "GAP website", 'url': "http://gap-system.org/" },
+                   { 'text': "GAP documentation", 'url': "http://gap-system.org/Doc/doc.html" },
+                   { 'text': "GAP tutorial", 'url': "http://gap-system.org/Manuals/doc/tut/chap0.html" },
+                   { 'text': "GAP reference", 'url': "http://gap-system.org/Manuals/doc/ref/chap0.html" } ]
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
