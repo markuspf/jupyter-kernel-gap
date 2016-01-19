@@ -10,6 +10,6 @@ setup( name="jupyter_gap_wrapper"
      , url="https://github.com/gap-system/jupyter-gap"
      , packages=["jupyter_gap_wrapper"]
      , package_dir={"jupyter_gap_wrapper": "jupyter_gap_wrapper"}
-     , package_data={"jupyter_gap_wrapper": ["gap/setup.g"]}
+     , package_data={"jupyter_gap_wrapper": ["gap/setup.g","resources/logo-32x32.png","resources/logo-64x64.png"]}
      ,
      )
