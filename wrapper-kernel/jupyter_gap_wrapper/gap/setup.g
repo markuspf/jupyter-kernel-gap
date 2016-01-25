@@ -35,6 +35,15 @@ function(tok)
   od; 
 end);
 
+# This is a really ugly hack, but at the moment
+# it works nicely enough to demo stuff.
+# In the future we might want to dump the dot
+# into a temporary file and then exec dot on it.
+BindGlobal("JupyterDotSplash",
+function(dot)
+  Exec(Concatenation("echo '",dot,"' | dot -Tsvg"));
+end);
+
 # The following are needed to make the help system
 # sort of play nice with the wrapper kernel
 SetUserPreference("browse", "SelectHelpMatches", false);

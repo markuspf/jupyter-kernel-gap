@@ -28,7 +28,7 @@ class GAPKernel(Kernel):
     @property
     def banner(self):
         if self._banner is None:
-            self._banner = "GAP 4.7 Jupyter kernel"
+            self._banner = "GAP 4 Jupyter kernel"
         return self._banner
 
     language_info = {'name': 'gap',
@@ -44,6 +44,10 @@ class GAPKernel(Kernel):
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         self._start_gap()
+
+    # Horrible, horrible hack
+    def _xml_response(self, string):
+        return not (re.match("<\?xml", string) is None)
 
     def _start_gap(self):
         # Signal handlers are inherited by forked processes, and we can't easily
@@ -88,9 +92,17 @@ class GAPKernel(Kernel):
             self._start_gap()
 
         if not silent:
-            # Send standard output
-            stream_content = {'name': 'stdout', 'text': output}
-            self.send_response(self.iopub_socket, 'stream', stream_content)
+            if self._xml_response(output):
+                stream_content = { 'source' : 'gap',
+                                   'data': { 'image/svg+xml': output },
+                                   'metadata': { 'image/svg+xml' : { 'width': 400, 'height': 400 } } }
+                self.send_response(self.iopub_socket, 'display_data', stream_content)
+                stream_content = {'name': 'stdout', 'text': 'Success'}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+            else:
+                # Send standard output
+                stream_content = {'name': 'stdout', 'text': output}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}

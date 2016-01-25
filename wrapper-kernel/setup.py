@@ -4,7 +4,7 @@ import sys
 from distutils.core import setup
 
 setup( name="jupyter_gap_wrapper"
-     , version="0.3"
+     , version="0.4"
      , description="A Jupyter wrapper kernel for GAP"
      , author="Markus Pfeiffer"
      , url="https://github.com/gap-system/jupyter-gap"
