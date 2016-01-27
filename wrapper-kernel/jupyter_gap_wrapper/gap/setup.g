@@ -32,7 +32,7 @@ function(tok)
     if PositionSublist(i, tok) = 1 then
       Print(i, "\n");
     fi;
-  od; 
+  od;
 end);
 
 # This is a really ugly hack, but at the moment
@@ -41,7 +41,16 @@ end);
 # into a temporary file and then exec dot on it.
 BindGlobal("JupyterDotSplash",
 function(dot)
-  Exec(Concatenation("echo '",dot,"' | dot -Tsvg"));
+    local fn, fd;
+
+    fn := TmpName();
+    fd := IO_File(fn, "w");
+    IO_Write(fd, dot);
+    IO_Close(fd);
+
+    Exec("dot","-Tsvg",fn);
+
+    IO_unlink(fn);
 end);
 
 # The following are needed to make the help system
@@ -49,5 +58,3 @@ end);
 SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "cat");
 SetUserPreference("PagerOptions", "");
-
-
