@@ -58,3 +58,6 @@ end);
 SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "cat");
 SetUserPreference("PagerOptions", "");
+
+# Display help in browser
+SetUserPreference( "HelpViewers", ["browser"])
