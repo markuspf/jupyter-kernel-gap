@@ -35,7 +35,7 @@ class GAPKernel(Kernel):
                      'codemirror_mode': 'gap', # note that this does not exist yet
                      'mimetype': 'text/x-gap',
                      'file_extension': '.g'}
-    
+
     help_links = [ { 'text': "GAP website", 'url': "http://gap-system.org/" },
                    { 'text': "GAP documentation", 'url': "http://gap-system.org/Doc/doc.html" },
                    { 'text': "GAP tutorial", 'url': "http://gap-system.org/Manuals/doc/tut/chap0.html" },
@@ -129,7 +129,12 @@ class GAPKernel(Kernel):
         if not code or code[-1] == ' ':
             return default
 
-        tokens = code.replace(';', ' ').split()
+        tokens = code
+        for ch in ";+*-()[]/":
+            if ch in tokens:
+                tokens = tokens.replace(ch, ' ')
+
+        tokens = tokens.split()
         if not tokens:
             return default
 
@@ -149,5 +154,3 @@ class GAPKernel(Kernel):
         return {'matches': sorted(matches), 'cursor_start': start,
                 'cursor_end': cursor_pos, 'metadata': dict(),
                 'status': 'ok'}
-
-
