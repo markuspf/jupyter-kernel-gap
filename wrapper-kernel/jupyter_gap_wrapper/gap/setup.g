@@ -59,5 +59,5 @@ SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "cat");
 SetUserPreference("PagerOptions", "");
 
-# Display help in browser
-SetUserPreference( "HelpViewers", ["browser"])
+# Display help in browser not a good option for servers
+# SetUserPreference( "HelpViewers", ["browser"])
