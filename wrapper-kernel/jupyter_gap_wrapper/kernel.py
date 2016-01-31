@@ -130,7 +130,7 @@ class GAPKernel(Kernel):
             return default
 
         tokens = code
-        for ch in ";+*-()[]/,.":
+        for ch in ";+*-()[]/,.?":
             if ch in tokens:
                 tokens = tokens.replace(ch, ' ')
 
