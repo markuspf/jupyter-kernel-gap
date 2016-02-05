@@ -17,9 +17,9 @@ to install
 To use it, use one of the following:
 
 ```shell
-    ipython notebook
-    ipython qtconsole --kernel gap
-    ipython console --kernel gap
+    jupyter notebook
+    jupyter qtconsole --kernel gap
+    jupyter console --kernel gap
 ```
 
 Note that this kernel assumes that `gap.sh' is in the `PATH'.
