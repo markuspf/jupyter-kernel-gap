@@ -6,7 +6,7 @@ and architecture might change on a day-to-day basis without notice.
 
 ## wrapper-kernel
 
-The `wrapper-kernel' is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
+The `wrapper-kernel` is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
 to install
 
 ```shell
@@ -22,4 +22,4 @@ To use it, use one of the following:
     jupyter console --kernel gap
 ```
 
-Note that this kernel assumes that `gap.sh' is in the `PATH'.
+Note that this kernel assumes that `gap` or `gap.sh` is in the `PATH`.
