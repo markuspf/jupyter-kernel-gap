@@ -22,4 +22,4 @@ To use it, use one of the following:
     jupyter console --kernel gap
 ```
 
-Note that this kernel assumes that `gap` or `gap.sh` is in the `PATH`.
+Note that this kernel requires you to set the environment variable `JUPYTER_GAP_EXECUTABLE` to a valid gap executable or `gap.sh` script.
