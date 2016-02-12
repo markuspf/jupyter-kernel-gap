@@ -53,6 +53,23 @@ function(dot)
     IO_unlink(fn);
 end);
 
+# This is another ugly hack to make the GAP Help System
+# play ball. Let us please fix this soon.
+HELP_VIEWER_INFO.jupyter_online :=
+    rec(
+         type := "url",
+         show := function(url)
+             local p,r;
+
+             p := url;
+
+             for r in GAPInfo.RootPaths do
+                 p := ReplacedString(url, r, "https://cloud.gap-system.org/");
+             od;
+             Print("<doclink dst=\"", p, "\">\n");
+         end
+        );
+
 # Make sure that we don't insert ugly line breaks into the
 # output stream
 SetPrintFormattingStatus("*stdout*", false);
@@ -62,3 +79,6 @@ SetPrintFormattingStatus("*stdout*", false);
 SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "tail");
 SetUserPreference("PagerOptions", "");
+# This is of course complete nonsense if you're running the jupyter notebook
+# on your local machine.
+SetHelpViewer("jupyter-online");
