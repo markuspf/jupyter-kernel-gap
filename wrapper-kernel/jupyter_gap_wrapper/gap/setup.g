@@ -81,6 +81,3 @@ SetUserPreference("PagerOptions", "");
 # This is of course complete nonsense if you're running the jupyter notebook
 # on your local machine.
 SetHelpViewer("jupyter_online");
-# The following is another hack because. Well I don't know why.
-SetPrintFormattingStatus("*stdout*", false);
-SET_PRINT_FORMATTING_STDOUT(false);

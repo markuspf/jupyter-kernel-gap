@@ -71,12 +71,15 @@ class GAPKernel(Kernel):
             gap_extra_options = getenv(self._env_options, "")
             self.gapwrapper = replwrap.REPLWrapper(
                                 gap_run_command 
-                                + ' -n -b -T -x 4096 %s %s/gap/setup.g' % (gap_extra_options, setupg)
+                                + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
                               , u'gap|| '
                               , None
                               , None
                               , continuation_prompt=u'|| ')
             self.gapwrapper.run_command("\n");
+            # Try to force GAP to not format the output. This doesn't work from
+            # setup.g and god alone knows why
+            self.gapwrapper.run_command("SetPrintFormattingStatus(\"*stdout*\", false);\n")
         finally:
             signal.signal(signal.SIGINT, sig)
 
