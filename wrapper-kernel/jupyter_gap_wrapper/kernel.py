@@ -2,7 +2,7 @@ from ipykernel.kernelbase import Kernel
 from pexpect import replwrap, EOF, which
 
 from subprocess import check_output
-from os import unlink, path
+from os import unlink, path, getenv
 
 import base64
 import imghdr
@@ -17,6 +17,9 @@ version_pat = re.compile(r'version (\d+(\.\d+)+)')
 class GAPKernel(Kernel):
     implementation = 'jupyter_gap_wrapper'
     implementation_version = __version__
+
+    _env_executable = 'JUPYTER_GAP_EXECUTABLE'
+    _env_options = 'JUPYTER_GAP_OPTIONS'
 
     @property
     def language_version(self):
@@ -58,13 +61,14 @@ class GAPKernel(Kernel):
         try:
             # setup.g contains functions needed for Jupyter interfacing
             setupg = path.dirname(path.abspath(__file__))
-            if which( 'gap' ) != None:
-                gap_run_command = which( 'gap' )
-            elif which( 'gap.sh' ) != None:
-                gap_run_command = which( 'gap.sh' )
-            else:
-                raise NameError( 'gap executable not found')
-            self.gapwrapper = replwrap.REPLWrapper( gap_run_command + ' -n -b -T %s/gap/setup.g' % (setupg)
+            gap_run_command = getenv(self._env_executable)
+            if gap_run_command is None:
+                print(gap_run_command)
+                raise NameError("Please set %s in your environment %s" % (self._env_executable, gap_run_command))  
+            gap_extra_options = getenv(self._env_options, "")
+            self.gapwrapper = replwrap.REPLWrapper(
+                                gap_run_command 
+                                + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
                               , u'gap|| '
                               , None
                               , None
