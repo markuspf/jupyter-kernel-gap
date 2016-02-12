@@ -51,6 +51,9 @@ class GAPKernel(Kernel):
     # Horrible, horrible hack
     def _xml_response(self, string):
         return not (re.match("<\?xml", string) is None)
+    def _doc_response(self, string):
+        # This is going to fall on our feet soon
+        return not (re.search("<a target", string) is None)
 
     def _start_gap(self):
         # Signal handlers are inherited by forked processes, and we can't easily
@@ -68,7 +71,7 @@ class GAPKernel(Kernel):
             gap_extra_options = getenv(self._env_options, "")
             self.gapwrapper = replwrap.REPLWrapper(
                                 gap_run_command 
-                                + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
+                                + ' -n -b -T -x 4096 %s %s/gap/setup.g' % (gap_extra_options, setupg)
                               , u'gap|| '
                               , None
                               , None
@@ -103,6 +106,11 @@ class GAPKernel(Kernel):
                 self.send_response(self.iopub_socket, 'display_data', stream_content)
                 stream_content = {'name': 'stdout', 'text': 'Success'}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
+            if self._doc_response(output):
+                stream_content = { 'source' : 'gap',
+		                   'data': { 'text/html': output },
+                                   'metadata': { } }
+                self.send_response(self.iopub_socket, 'display_data', stream_content)
             else:
                 # Send standard output
                 stream_content = {'name': 'stdout', 'text': output}
@@ -158,3 +166,6 @@ class GAPKernel(Kernel):
         return {'matches': sorted(matches), 'cursor_start': start,
                 'cursor_end': cursor_pos, 'metadata': dict(),
                 'status': 'ok'}
+
+    def do_inspect(self, code, cursor_pos, detail_level=0):
+        return {'status': 'ok', 'found': 'true', 'data': 'Spass hassen spass', 'metadata':''}
