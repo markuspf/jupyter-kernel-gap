@@ -66,13 +66,12 @@ HELP_VIEWER_INFO.jupyter_online :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(url, r, "https://cloud.gap-system.org/");
              od;
-             Print("<doclink dst=\"", p, "\">\n");
+             Print("<a href=\"", p, "\">Help</a>\n");
          end
         );
 
 # Make sure that we don't insert ugly line breaks into the
 # output stream
-SetPrintFormattingStatus("*stdout*", false);
 
 # The following are needed to make the help system
 # sort of play nice with the wrapper kernel
@@ -81,4 +80,7 @@ SetUserPreference("Pager", "tail");
 SetUserPreference("PagerOptions", "");
 # This is of course complete nonsense if you're running the jupyter notebook
 # on your local machine.
-SetHelpViewer("jupyter-online");
+SetHelpViewer("jupyter_online");
+# The following is another hack because. Well I don't know why.
+SetPrintFormattingStatus("*stdout*", false);
+SET_PRINT_FORMATTING_STDOUT(false);
