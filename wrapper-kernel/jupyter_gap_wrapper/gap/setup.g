@@ -53,6 +53,10 @@ function(dot)
     IO_unlink(fn);
 end);
 
+# Make sure that we don't insert ugly line breaks into the
+# output stream
+SetPrintFormattingStatus("*stdout*", false);
+
 # The following are needed to make the help system
 # sort of play nice with the wrapper kernel
 SetUserPreference("browse", "SelectHelpMatches", false);
