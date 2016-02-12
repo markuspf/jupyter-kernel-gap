@@ -118,9 +118,57 @@ HELP_VIEWER_INFO.jupyter_online :=
              od;
              return rec( json := true
                        , source := "gap"
-                       , data := rec( ("text/html") := Concatenation("<a target=\"_blank\" href=\"", p, "\">Help</a>") ) );
+                       , data := rec( ("text/html") := Concatenation("<a target=\"_blank\" href=\"", p, "\">click here</a>") ) );
          end
         );
+
+DeclareGlobalFunction("HELP_PRINT_URL");
+
+#############################################################################
+##
+#F  HELP_PRINT_URL( <match> ) . . . . . .  print the url for the help section
+##
+##  Based on HELP_PRINT_MATCH
+##
+##  <match> is [book, entrynr]
+##
+InstallGlobalFunction(HELP_PRINT_URL, function(match)
+local book, entrynr, viewer, hv, pos, type, data;
+  book := HELP_BOOK_INFO(match[1]);
+  entrynr := match[2];
+  viewer:= UserPreference("HelpViewers");
+  if HELP_LAST.NEXT_VIEWER = false then
+    hv := viewer;
+  else
+    pos := Position( viewer, HELP_LAST.VIEWER );
+    if pos = fail then
+      hv := viewer;
+    else
+      hv := viewer{Concatenation([pos+1..Length(viewer)],[1..pos])};
+    fi;
+    HELP_LAST.NEXT_VIEWER := false;
+  fi;
+  for viewer in hv do
+    # type of data we need now depends on help viewer
+    type := HELP_VIEWER_INFO.(viewer).type;
+    # get the data via appropriate handler
+    data := HELP_BOOK_HANDLER.(book.handler).HelpData(book, entrynr, type);
+    if data <> fail then
+      # show the data
+      HELP_VIEWER_INFO.(viewer).show(data);
+      break;
+    else
+      Print(" - no html help available. Please check other formats!<br/>");
+      break;
+    fi;
+    HELP_LAST.VIEWER := viewer;
+  od;
+  HELP_LAST.BOOK := book;
+  HELP_LAST.MATCH := entrynr;
+  HELP_LAST.VIEWER := viewer;
+  return true;
+end);
+
 
 MakeReadWriteGlobal("HELP_SHOW_MATCHES");
 UnbindGlobal("HELP_SHOW_MATCHES");
@@ -142,8 +190,8 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n;
   elif 1 = Length(exact) or (0 = Length(exact) and 1 = Length(match)) then
     if Length(exact) = 0 then exact := match; fi;
     i := exact[1];
-    str := Concatenation("Help: Showing `", i[1].bookname,": ",
-                                               StripEscapeSequences(i[1].entries[i[2]][1]), "'\n");
+    str := Concatenation( i[1].bookname,": ",
+                                               StripEscapeSequences(i[1].entries[i[2]][1]), "\n");
     # to avoid line breaking when str contains escape sequences:
     n := 0;
     while n < Length(str) do
@@ -151,7 +199,7 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n;
                                     n + QuoInt(SizeScreen()[1] ,2))]}, "\c");
       n := n + QuoInt(SizeScreen()[1] ,2);
     od;
-    HELP_PRINT_MATCH(i);
+    HELP_PRINT_URL(i);
     return true;
 
   # more than one topic found, show overview in pager
@@ -168,8 +216,19 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n;
       topic := Concatenation(i[1].bookname,": ",i[1].entries[i[2]][1]);
       Add(HELP_LAST.TOPICS, i);
       Add(lines,Concatenation("[",String(cnt),"] ",topic));
+
+      str := Concatenation( i[1].bookname,": ",
+                                               StripEscapeSequences(i[1].entries[i[2]][1]), "\n");
+      # to avoid line breaking when str contains escape sequences:
+      n := 0;
+      while n < Length(str) do
+        Print(str{[n+1..Minimum(Length(str),
+                                      n + QuoInt(SizeScreen()[1] ,2))]}, "\c");
+        n := n + QuoInt(SizeScreen()[1] ,2);
+      od;
+      HELP_PRINT_URL(i);
     od;
-    Pager(rec(lines := lines, formatted := true, start := 2 ));
+    #Pager(rec(lines := lines, formatted := true, start := 2 ));
     return true;
   fi;
 end);
