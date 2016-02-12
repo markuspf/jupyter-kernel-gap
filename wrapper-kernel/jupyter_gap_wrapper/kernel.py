@@ -49,7 +49,8 @@ class GAPKernel(Kernel):
     def _xml_response(self, string):
         return not (re.match("<\?xml", string) is None)
     def _doc_response(self, string):
-        return not (re.match("<doclink", string) is None)
+        # This is going to fall on our feet soon
+        return not (re.search("<a target", string) is None)
 
     def _start_gap(self):
         # Signal handlers are inherited by forked processes, and we can't easily
@@ -66,7 +67,10 @@ class GAPKernel(Kernel):
                 gap_run_command = which( 'gap.sh' )
             else:
                 raise NameError( 'gap executable not found')
-            self.gapwrapper = replwrap.REPLWrapper( gap_run_command + ' -n -b -T %s/gap/setup.g' % (setupg)
+            # Start GAP with a terminal width of 4096 to at least prevent it from printing
+            # stupid newlines. In reality, setup.g tries setting output formatting to false
+            # but for some reason this doesn't work right now.
+            self.gapwrapper = replwrap.REPLWrapper( gap_run_command + ' -n -b -T -x 4096 %s/gap/setup.g' % (setupg)
                               , u'gap|| '
                               , None
                               , None
@@ -104,7 +108,7 @@ class GAPKernel(Kernel):
             if self._doc_response(output):
                 stream_content = { 'source' : 'gap',
 		                   'data': { 'text/html': output },
-                                   'metadata': { }
+                                   'metadata': { } }
                 self.send_response(self.iopub_socket, 'display_data', stream_content)
             else:
                 # Send standard output

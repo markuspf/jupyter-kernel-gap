@@ -66,7 +66,7 @@ HELP_VIEWER_INFO.jupyter_online :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(url, r, "https://cloud.gap-system.org/");
              od;
-             Print("<a href=\"", p, "\">Help</a>\n");
+             Print("<a target=\"_blank\" href=\"", p, "\">Help</a>\n");
          end
         );
 
