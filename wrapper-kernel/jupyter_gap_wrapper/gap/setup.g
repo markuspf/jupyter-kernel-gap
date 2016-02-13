@@ -1,5 +1,7 @@
 #  Unbind(PrintPromptHook);
 
+LoadPackage("json");
+
 # Set the prompt to something that pexpect can
 # handle
 BindGlobal("PrintPromptHook",
@@ -18,6 +20,15 @@ function()
   PRINT_CPROMPT(cp);
 end);
 
+# Get a handle on stdout so we can print to
+# it bypassing GAPs formatting.
+BindGlobal("JUPYTER_stdout",
+           IO_WrapFD(IO_dup(0), 4096, false));
+BindGlobal("JUPYTER_print",
+function(str)
+    IO_Write(JUPYTER_stdout, str);
+end);
+
 # Todo: Maybe depend on the json module and use a rec
 BindGlobal("JUPYTER_RunCommand",
 function(string)
@@ -28,14 +39,22 @@ function(string)
 
   if result[1] = true then
     if Length(result) = 1 then
-      Print("{ \"status\": \"ok\" }");
+        JUPYTER_print("{ \"status\": \"ok\" }");
     elif Length(result) = 2 then
-      Print("{ \"status\": \"ok\", \"result\": ");
-      # Hopefully get the quotes right...
-      Print(StringView(StringView(result[2])));
-      Print(" }");
+        if IsRecord(result[2]) and IsBound(result[2].json) then
+            JUPYTER_print( GapToJsonString( rec(
+                                status := "ok",
+                                result := result[2]
+                               ) ) );
+        else
+            JUPYTER_print( GapToJsonString( rec(
+                                status := "ok",
+                                result := rec( name := "stdout"
+                                             , text := ViewString(result[2]))
+                               ) ) );
+        fi;
     else
-      Print("{ \"status\": \"error\" }");
+        Print("{ \"status\": \"error\" }");
     fi;
   else
     Print("{ \"status\": \"error\" }");
@@ -59,22 +78,26 @@ function(tok)
   od;
 end);
 
-# This is a really ugly hack, but at the moment
-# it works nicely enough to demo stuff.
-# In the future we might want to dump the dot
-# into a temporary file and then exec dot on it.
-BindGlobal("JupyterDotSplash",
+# This is still an ugly hack, but its already much better than before!
+BindGlobal("JUPYTER_DotSplash",
 function(dot)
-    local fn, fd;
+    local fn, fd, r;
+
 
     fn := TmpName();
     fd := IO_File(fn, "w");
     IO_Write(fd, dot);
     IO_Close(fd);
 
-    Exec("dot","-Tsvg",fn);
-
+    fd := IO_Popen(IO_FindExecutable("dot"), ["-Tsvg", fn], "r");
+    r := IO_ReadUntilEOF(fd);
+    IO_close(fd);
     IO_unlink(fn);
+
+    return rec( json := true
+              , source := "gap"
+              , data := rec( ("image/svg+xml") := r )
+              , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
 
 # This is another ugly hack to make the GAP Help System
@@ -138,7 +161,7 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n;
     for i  in match  do
       cnt := cnt+1;
       topic := Concatenation(i[1].bookname,": ",i[1].entries[i[2]][1]);
-		  Add(HELP_LAST.TOPICS, i);
+      Add(HELP_LAST.TOPICS, i);
       Add(lines,Concatenation("[",String(cnt),"] ",topic));
     od;
     Pager(rec(lines := lines, formatted := true, start := 2 ));

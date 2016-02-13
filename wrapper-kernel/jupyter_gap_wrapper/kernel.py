@@ -53,13 +53,17 @@ class GAPKernel(Kernel):
     def _loghack(self, *objs):
         self.log.error(objs)
 
+    # Is this good enough?
+    def _escape_code(self, code):
+        return code.replace("\\","\\\\").replace('"','\\"').replace('\n','\\n')
+
     # Separate out the json response part  from the yucky rest
     # in the near future we should be able to rely on GAP to just
     # respond with json
     def _sep_response(self, string):
         # not the safest way of doing this
         jsonl = string.find('{')
-        jsonr = string.find('}')
+        jsonr = string.rfind('}')
 
         res_json = string[jsonl:jsonr+1]
         res_rest = string[:jsonl] + string[jsonr+1:]
@@ -101,7 +105,8 @@ class GAPKernel(Kernel):
         interrupted = False
         try:
             # We need to get the escaping right :/
-            cmd = 'JUPYTER_RunCommand("%s ;");' % (code.encode("unicode_escape").replace('"', '\\"'))
+            cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
+            self.log.error("command %s" % (cmd))
             output = self.gapwrapper.run_command(cmd, timeout=None)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
@@ -118,8 +123,12 @@ class GAPKernel(Kernel):
 
             if jsonp['status'] == 'ok':
                 if 'result' in jsonp:
-                  stream_content = {'name': 'stdout', 'text': jsonp['result']}
-                  self.send_response(self.iopub_socket, 'stream', stream_content)
+                    stream_content = jsonp['result']
+                    if 'data' in jsonp['result']:
+                        self.send_response(self.iopub_socket, 'display_data', stream_content)
+                    else:
+                        self.send_response(self.iopub_socket, 'stream', stream_content)
+
                 stream_content = {'name': 'stdout', 'text': res_rest}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
                 return {'status': 'ok', 'execution_count': self.execution_count,
