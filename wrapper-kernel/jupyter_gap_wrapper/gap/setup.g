@@ -26,10 +26,17 @@ function(string)
   stream := InputTextString(string);
   result := READ_COMMAND_REAL(stream, true);
 
-  if (Length(result) = 2) and (result[1] = true) then
-    Print("{ \"status\": \"ok\", \"result\": \"");
-    View(result[2]);
-    Print("\"}");
+  if result[1] = true then
+    if Length(result) = 1 then
+      Print("{ \"status\": \"ok\" }");
+    elif Length(result) = 2 then
+      Print("{ \"status\": \"ok\", \"result\": ");
+      # Hopefully get the quotes right...
+      Print(StringView(StringView(result[2])));
+      Print(" }");
+    else
+      Print("{ \"status\": \"error\" }");
+    fi;
   else
     Print("{ \"status\": \"error\" }");
   fi;

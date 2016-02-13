@@ -12,7 +12,6 @@ import urllib
 import json
 
 __version__ = '0.3'
-
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 class GAPKernel(Kernel):
@@ -49,6 +48,11 @@ class GAPKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self._start_gap()
 
+    # At the moment I can only get jupyter notebook to display
+    # error messages from the kernel. So be it.
+    def _loghack(self, *objs):
+        self.log.error(objs)
+
     # Separate out the json response part  from the yucky rest
     # in the near future we should be able to rely on GAP to just
     # respond with json
@@ -72,7 +76,6 @@ class GAPKernel(Kernel):
             setupg = path.dirname(path.abspath(__file__))
             gap_run_command = getenv(self._env_executable)
             if gap_run_command is None:
-                print(gap_run_command)
                 raise NameError("Please set %s in your environment to a valid gap executable" % (self._env_executable))  
             gap_extra_options = getenv(self._env_options, "")
             self.gapwrapper = replwrap.REPLWrapper(
@@ -97,9 +100,8 @@ class GAPKernel(Kernel):
 
         interrupted = False
         try:
-            print("running command")
-            cmd = 'JUPYTER_RunCommand("%s ;");' % (code.encode('unicode_escape'))
-            print("running command %s" % (cmd))
+            # We need to get the escaping right :/
+            cmd = 'JUPYTER_RunCommand("%s ;");' % (code.encode("unicode_escape").replace('"', '\\"'))
             output = self.gapwrapper.run_command(cmd, timeout=None)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
@@ -112,23 +114,22 @@ class GAPKernel(Kernel):
 
         if not silent:
             (res_json, res_rest) = self._sep_response(output)
-            print("Crap: %s %s" % (res_json,res_rest))
             jsonp = json.loads(res_json)
 
             if jsonp['status'] == 'ok':
-                print("executing ok status crap")
-                stream_content = {'name': 'stdout', 'text': jsonp['result']}
+                if 'result' in jsonp:
+                  stream_content = {'name': 'stdout', 'text': jsonp['result']}
+                  self.send_response(self.iopub_socket, 'stream', stream_content)
+                stream_content = {'name': 'stdout', 'text': res_rest}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
                 return {'status': 'ok', 'execution_count': self.execution_count,
                         'payload': [], 'user_expressions': {}}
             elif jsonp['status'] == 'error':
-                print("executing error status crap")
                 stream_content = {'name': 'stderr', 'text': res_rest }
                 self.send_response(self.iopub_socket, 'stream', stream_content)
                 return {'status': 'error', 'execution_count': self.execution_count,
                         'ename': '', 'evalue': str(-1), 'traceback': []}
             else:
-                print("other shite")
                 return {'status': 'error', 'execution_count': self.execution_count,
                         'ename': '', 'evalue': str(-2), 'traceback': []}
 
