@@ -49,13 +49,6 @@ class GAPKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self._start_gap()
 
-    # Horrible, horrible hack
-    def _xml_response(self, string):
-        return not (re.match("<\?xml", string) is None)
-    def _doc_response(self, string):
-        # This is going to fall on our feet soon
-        return not (re.search("<a target", string) is None)
-
     # Separate out the json response part  from the yucky rest
     # in the near future we should be able to rely on GAP to just
     # respond with json
