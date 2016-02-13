@@ -9,6 +9,7 @@ import imghdr
 import re
 import signal
 import urllib
+import json
 
 __version__ = '0.3'
 
@@ -55,6 +56,18 @@ class GAPKernel(Kernel):
         # This is going to fall on our feet soon
         return not (re.search("<a target", string) is None)
 
+    # Separate out the json response part  from the yucky rest
+    # in the near future we should be able to rely on GAP to just
+    # respond with json
+    def _sep_response(self, string):
+        # not the safest way of doing this
+        jsonl = string.find('{')
+        jsonr = string.find('}')
+
+        res_json = string[jsonl:jsonr+1]
+        res_rest = string[:jsonl] + string[jsonr+1:]
+        return (res_json,res_rest)
+
     def _start_gap(self):
         # Signal handlers are inherited by forked processes, and we can't easily
         # reset it from the subprocess. Since kernelapp ignores SIGINT except in
@@ -91,7 +104,10 @@ class GAPKernel(Kernel):
 
         interrupted = False
         try:
-            output = self.gapwrapper.run_command(code.rstrip().replace('\n', ' ') + " ;", timeout=None)
+            print("running command")
+            cmd = 'JUPYTER_RunCommand("%s ;");' % (code.encode('unicode_escape'))
+            print("running command %s" % (cmd))
+            output = self.gapwrapper.run_command(cmd, timeout=None)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -102,37 +118,45 @@ class GAPKernel(Kernel):
             self._start_gap()
 
         if not silent:
-            if self._xml_response(output):
-                stream_content = { 'source' : 'gap',
-                                   'data': { 'image/svg+xml': output },
-                                   'metadata': { 'image/svg+xml' : { 'width': 400, 'height': 400 } } }
-                self.send_response(self.iopub_socket, 'display_data', stream_content)
-                stream_content = {'name': 'stdout', 'text': 'Success'}
-                self.send_response(self.iopub_socket, 'stream', stream_content)
-            if self._doc_response(output):
-                stream_content = { 'source' : 'gap',
-		                   'data': { 'text/html': output },
-                                   'metadata': { } }
-                self.send_response(self.iopub_socket, 'display_data', stream_content)
-            else:
-                # Send standard output
-                stream_content = {'name': 'stdout', 'text': output}
-                self.send_response(self.iopub_socket, 'stream', stream_content)
+            (res_json, res_rest) = self._sep_response(output)
+            print("Crap: %s %s" % (res_json,res_rest))
+            jsonp = json.loads(res_json)
 
+            if jsonp['status'] == 'ok':
+                print("executing ok status crap")
+                stream_content = {'name': 'stdout', 'text': jsonp['result']}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+                return {'status': 'ok', 'execution_count': self.execution_count,
+                        'payload': [], 'user_expressions': {}}
+            elif jsonp['status'] == 'error':
+                print("executing error status crap")
+                stream_content = {'name': 'stderr', 'text': res_rest }
+                self.send_response(self.iopub_socket, 'stream', stream_content)
+                return {'status': 'error', 'execution_count': self.execution_count,
+                        'ename': '', 'evalue': str(-1), 'traceback': []}
+            else:
+                print("other shite")
+                return {'status': 'error', 'execution_count': self.execution_count,
+                        'ename': '', 'evalue': str(-2), 'traceback': []}
+
+#TODO: Add back xml and help responses using json
+#            if self._xml_response(output):
+#                stream_content = { 'source' : 'gap',
+#                                   'data': { 'image/svg+xml': output },
+#                                   'metadata': { 'image/svg+xml' : { 'width': 400, 'height': 400 } } }
+#                self.send_response(self.iopub_socket, 'display_data', stream_content)
+#                stream_content = {'name': 'stdout', 'text': 'Success'}
+#                self.send_response(self.iopub_socket, 'stream', stream_content)
+#            if self._doc_response(output):
+#                stream_content = { 'source' : 'gap',
+#		                   'data': { 'text/html': output },
+#                                   'metadata': { } }
+#                self.send_response(self.iopub_socket, 'display_data', stream_content)
+#            else:
+                # Send standard output
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
 
-        try:
-            exitcode = int(self.gapwrapper.run_command('\n').rstrip())
-        except Exception:
-            exitcode = 1
-
-        if exitcode:
-            return {'status': 'error', 'execution_count': self.execution_count,
-                    'ename': '', 'evalue': str(exitcode), 'traceback': []}
-        else:
-            return {'status': 'ok', 'execution_count': self.execution_count,
-                    'payload': [], 'user_expressions': {}}
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
@@ -158,7 +182,7 @@ class GAPKernel(Kernel):
         start = cursor_pos - len(token)
 
         # complete bound global variables
-        cmd = 'JupyterCompletion("%s");' % token
+        cmd = 'JUPYTER_Completion("%s");' % token
         output = self.gapwrapper.run_command(cmd).rstrip()
         matches.extend(output.split())
 

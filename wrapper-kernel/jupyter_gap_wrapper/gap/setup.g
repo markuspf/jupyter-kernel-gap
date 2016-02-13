@@ -4,25 +4,42 @@
 # handle
 BindGlobal("PrintPromptHook",
 function()
-    local cp;
-    cp := CPROMPT();
-    if cp = "gap> " then
-      cp := "gap|| ";
-    fi;
-    if Length(cp)>0 and cp[1] = 'b' then
-      cp := "brk|| ";
-    fi;
-    if Length(cp)>0 and cp[1] = '>' then
-      cp := "||";
-    fi;
-    PRINT_CPROMPT(cp);
+  local cp;
+  cp := CPROMPT();
+  if cp = "gap> " then
+    cp := "gap|| ";
+  fi;
+  if Length(cp)>0 and cp[1] = 'b' then
+    cp := "brk|| ";
+  fi;
+  if Length(cp)>0 and cp[1] = '>' then
+    cp := "||";
+  fi;
+  PRINT_CPROMPT(cp);
+end);
+
+# Todo: Maybe depend on the json module and use a rec
+BindGlobal("JUPYTER_RunCommand",
+function(string)
+  local stream, result;
+
+  stream := InputTextString(string);
+  result := READ_COMMAND_REAL(stream, true);
+
+  if (Length(result) = 2) and (result[1] = true) then
+    Print("{ \"status\": \"ok\", \"result\": \"");
+    View(result[2]);
+    Print("\"}");
+  else
+    Print("{ \"status\": \"error\" }");
+  fi;
 end);
 
 # This is a rather basic helper function to do
 # completion. It is related to the completion
 # function provided in lib/cmdledit.g in the GAP
 # distribution
-BindGlobal("JupyterCompletion",
+BindGlobal("JUPYTER_Completion",
 function(tok)
   local cand, i;
 
@@ -124,9 +141,6 @@ end);
 
 # Make sure that we don't insert ugly line breaks into the
 # output stream
-
-# The following are needed to make the help system
-# sort of play nice with the wrapper kernel
 SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "tail");
 SetUserPreference("PagerOptions", "");
