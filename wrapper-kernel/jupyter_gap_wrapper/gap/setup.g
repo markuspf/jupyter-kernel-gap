@@ -122,6 +122,20 @@ HELP_VIEWER_INFO.jupyter_online :=
          end
         );
 
+HELP_VIEWER_INFO.jupyter_local :=
+    rec(
+         type := "url",
+         show := function(url)
+             local p,r;
+
+             p := url;
+             for r in GAPInfo.RootPaths do
+                 p := ReplacedString(url, r, "/");
+             od;
+             Print("<a target=\"_blank\" href=\"/files", p, "\">click here</a><br/>\n");
+         end
+        );
+
 DeclareGlobalFunction("HELP_PRINT_URL");
 
 #############################################################################
