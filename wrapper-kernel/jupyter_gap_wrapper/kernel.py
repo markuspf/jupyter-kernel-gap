@@ -106,7 +106,6 @@ class GAPKernel(Kernel):
         try:
             # We need to get the escaping right :/
             cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
-            self.log.error("command %s" % (cmd))
             output = self.gapwrapper.run_command(cmd, timeout=None)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
@@ -142,21 +141,6 @@ class GAPKernel(Kernel):
                 return {'status': 'error', 'execution_count': self.execution_count,
                         'ename': '', 'evalue': str(-2), 'traceback': []}
 
-#TODO: Add back xml and help responses using json
-#            if self._xml_response(output):
-#                stream_content = { 'source' : 'gap',
-#                                   'data': { 'image/svg+xml': output },
-#                                   'metadata': { 'image/svg+xml' : { 'width': 400, 'height': 400 } } }
-#                self.send_response(self.iopub_socket, 'display_data', stream_content)
-#                stream_content = {'name': 'stdout', 'text': 'Success'}
-#                self.send_response(self.iopub_socket, 'stream', stream_content)
-#            if self._doc_response(output):
-#                stream_content = { 'source' : 'gap',
-#		                   'data': { 'text/html': output },
-#                                   'metadata': { } }
-#                self.send_response(self.iopub_socket, 'display_data', stream_content)
-#            else:
-                # Send standard output
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
 
