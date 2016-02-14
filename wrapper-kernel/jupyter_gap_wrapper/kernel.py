@@ -109,7 +109,7 @@ class GAPKernel(Kernel):
             cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
             self._loghack("command %s" % cmd)
             output = self.gapwrapper.run_command(cmd, timeout=None)
-            self._loghack("reply %s" % cmd)
+            self._loghack("reply %s" % output)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
