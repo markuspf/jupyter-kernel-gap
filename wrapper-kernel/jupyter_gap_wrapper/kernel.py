@@ -82,6 +82,7 @@ class GAPKernel(Kernel):
             if gap_run_command is None:
                 raise NameError("Please set %s in your environment to a valid gap executable" % (self._env_executable))  
             gap_extra_options = getenv(self._env_options, "")
+            self._loghack("starting GAP: %s" % (gap_run_command))
             self.gapwrapper = replwrap.REPLWrapper(
                                 gap_run_command 
                                 + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
@@ -106,7 +107,9 @@ class GAPKernel(Kernel):
         try:
             # We need to get the escaping right :/
             cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
+            self._loghack("command %s" % cmd)
             output = self.gapwrapper.run_command(cmd, timeout=None)
+            self._loghack("reply %s" % cmd)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -118,6 +121,8 @@ class GAPKernel(Kernel):
 
         if not silent:
             (res_json, res_rest) = self._sep_response(output)
+            self._loghack("json part: %s" % (res_json))
+            self._loghack("rest part: %s" % (res_rest))
             jsonp = json.loads(res_json)
 
             if jsonp['status'] == 'ok':

@@ -29,7 +29,6 @@ function(str)
     IO_Write(JUPYTER_stdout, str);
 end);
 
-# Todo: Maybe depend on the json module and use a rec
 BindGlobal("JUPYTER_RunCommand",
 function(string)
   local stream, result;
@@ -39,7 +38,7 @@ function(string)
 
   if result[1] = true then
     if Length(result) = 1 then
-        JUPYTER_print("{ \"status\": \"ok\" }");
+        JUPYTER_print( GapToJsonString( rec( status := "ok" ) ) );
     elif Length(result) = 2 then
         if IsRecord(result[2]) and IsBound(result[2].json) then
             JUPYTER_print( GapToJsonString( rec(
@@ -102,6 +101,10 @@ end);
 
 # This is another ugly hack to make the GAP Help System
 # play ball. Let us please fix this soon.
+# TODO: This is now broken because we got rid of parsing
+#       on the python side. HELP now should result
+#       in a record that can be sent back to jupyter
+#       as a JSON string
 HELP_VIEWER_INFO.jupyter_online :=
     rec(
          type := "url",
@@ -113,7 +116,9 @@ HELP_VIEWER_INFO.jupyter_online :=
              for r in GAPInfo.RootPaths do
                  p := ReplacedString(url, r, "https://cloud.gap-system.org/");
              od;
-             Print("<a target=\"_blank\" href=\"", p, "\">Help</a>\n");
+             return rec( json := true
+                       , source := "gap"
+                       , data := rec( ("text/html") := Concatenation("<a target=\"_blank\" href=\"", p, "\">Help</a>") ) );
          end
         );
 
@@ -169,8 +174,6 @@ local   exact,  match,  x,  lines,  cnt,  i,  str,  n;
   fi;
 end);
 
-# Make sure that we don't insert ugly line breaks into the
-# output stream
 SetUserPreference("browse", "SelectHelpMatches", false);
 SetUserPreference("Pager", "tail");
 SetUserPreference("PagerOptions", "");
