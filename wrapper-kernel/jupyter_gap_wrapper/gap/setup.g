@@ -53,10 +53,10 @@ function(string)
                                ) ) );
         fi;
     else
-        Print("{ \"status\": \"error\" }");
+        JUPYTER_print( GapToJsonString( rec( status := "error") ) );
     fi;
   else
-    Print("{ \"status\": \"error\" }");
+      JUPYTER_print( GapToJsonString( rec( status := "error") ) );
   fi;
 end);
 
