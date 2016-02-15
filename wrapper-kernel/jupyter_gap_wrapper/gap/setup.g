@@ -1,5 +1,5 @@
 #  Unbind(PrintPromptHook);
-
+LoadPackage("io");
 LoadPackage("json");
 
 # Set the prompt to something that pexpect can
