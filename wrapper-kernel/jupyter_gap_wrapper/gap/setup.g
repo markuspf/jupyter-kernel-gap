@@ -2,6 +2,9 @@
 LoadPackage("io");
 LoadPackage("json");
 
+last := "2b defined";
+last2 := "2b defined";
+
 # Set the prompt to something that pexpect can
 # handle
 BindGlobal("PrintPromptHook",
