@@ -40,6 +40,9 @@ function(string)
     if Length(result) = 1 then
         JUPYTER_print( GapToJsonString( rec( status := "ok" ) ) );
     elif Length(result) = 2 then
+        last2 := last;
+        last := result[2];
+
         if IsRecord(result[2]) and IsBound(result[2].json) then
             JUPYTER_print( GapToJsonString( rec(
                                 status := "ok",
