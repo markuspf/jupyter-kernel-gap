@@ -139,7 +139,7 @@ HELP_VIEWER_INFO.jupyter_local :=
              od;
              return rec( json := true
                        , source := "gap"
-                       , data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"", p, "\">", data[2], "</a>") ) );
+                       , data := rec( ("text/html") := Concatenation( data[1], ": <a target=\"_blank\" href=\"files", p, "\">", data[2], "</a>") ) );
          end
         );
 
