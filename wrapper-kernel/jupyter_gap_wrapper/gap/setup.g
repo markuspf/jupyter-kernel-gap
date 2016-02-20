@@ -105,6 +105,62 @@ function(dot)
               , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
 
+# To show TikZ in a GAP jupyter notebook
+BindGlobal("JUPYTER_TikZSplash",
+function(tikz)
+  local tmpdir, fn, header, ltx, svgfile, stream, svgdata, tojupyter;
+
+  header:=Concatenation( "\\documentclass[crop,tikz]{standalone}\n",
+                "\\usepackage{pgfplots}",
+                "\\makeatletter\n",
+                "\\batchmode\n",
+                "\\nonstopmode\n",
+                "\\begin{document}",
+                "\\begin{tikzpicture}");
+  header:=Concatenation(header, tikz);
+  header:=Concatenation(header,"\\end{tikzpicture}\n\\end{document}");
+
+  tmpdir := DirectoryTemporary();
+  fn := Filename( tmpdir, "svg_get" );
+
+  PrintTo( Concatenation( fn, ".tex" ), header );
+
+  ltx := Concatenation( "pdflatex -shell-escape --output-directory ",
+          Filename( tmpdir, "" ), " ",
+          Concatenation( fn, ".tex" ), " > ", Concatenation( fn, ".log2" ) );
+  Exec( ltx );
+
+  if not( IsExistingFile( Concatenation(fn, ".pdf") ) ) then
+    tojupyter := rec( json := true, name := "stdout", 
+      data := "No pdf was created; pdflatex is installed in your system?" );
+  else
+    svgfile := Concatenation( fn, ".svg" );
+    ltx := Concatenation( "pdf2svg ", Concatenation( fn, ".pdf" ), " ",
+                svgfile, " >> ", Concatenation( fn, ".log2" ) );
+    Exec( ltx );
+
+    if not( IsExistingFile( svgfile ) ) then
+      tojupyter := rec( json := true, name := "stdout", 
+        data := "No svg was created; pdf2svg is installed in your system?" );
+    else
+        stream := InputTextFile( svgfile );
+        if stream <> fail then
+            svgdata := ReadAll( stream );
+            tojupyter := rec( json := true, source := "gap",
+                            data := rec( ( "image/svg+xml" ) := svgdata ),
+                            metadata := rec( ( "image/svg+xml" ) := rec( width := 500, height := 500 ) ) );
+            CloseStream( stream );
+        else
+            tojupyter := rec( json := true, name := "stdout",
+                            data := Concatenation( "Unable to render ", tikz ) );
+        fi;
+    fi;
+  fi;
+
+  return tojupyter;
+end);
+
+
 # This is another ugly hack to make the GAP Help System
 # play ball. Let us please fix this soon.
 # TODO: This is now broken because we got rid of parsing
