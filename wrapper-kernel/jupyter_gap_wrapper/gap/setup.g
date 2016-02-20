@@ -105,6 +105,75 @@ function(dot)
               , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
 
+# TikZ draw for jupyter-gap
+BindGlobal("JUPYTER_TikZSplash",
+function(tikz)
+  local fn, header, rnd, ltx, svgfile, stream, svgdata, tojupyter;
+
+  header:=Concatenation( "\\documentclass[crop,tikz]{standalone}\n",
+                "\\usepackage{pgfplots}",
+                "\\makeatletter\n",
+                "\\batchmode\n",
+                "\\nonstopmode\n",
+                "\\begin{document}",
+                "\\begin{tikzpicture}");
+  header:=Concatenation(header, tikz);
+  header:=Concatenation(header,"\\end{tikzpicture}\n\\end{document}");
+
+  rnd:=String(Random([0..1000]));
+  fn := Concatenation("svg_get",rnd);
+
+  PrintTo(Concatenation(fn,".tex"),header);
+
+  ltx:=Concatenation("pdflatex -shell-escape  ",
+          Concatenation(fn, ".tex")," > ",Concatenation(fn, ".log2"));
+  Exec(ltx);
+
+  if not(IsExistingFile( Concatenation(fn, ".pdf") )) then
+    Print("No pdf was created; pdflatex is installed in your system?");
+  else
+    svgfile:=Concatenation(fn,".svg");
+    ltx:=Concatenation("pdf2svg ", Concatenation(fn, ".pdf"), " ",
+        svgfile, " >> ",Concatenation(fn, ".log2"));
+    Exec(ltx);
+
+    if not(IsExistingFile(svgfile)) then
+        Print("No svg was created; pdf2svg is installed in your system?");
+    else
+        stream := InputTextFile( svgfile );
+        if stream <> fail then
+            svgdata := ReadAll( stream );
+            tojupyter := rec( json := true, source := "gap",
+                            data := rec( ("image/svg+xml") := svgdata ),
+                            metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+            CloseStream( stream );
+        else
+            tojupyter := rec( json := "gap",
+                            data := rec( ("text/html") := Concatenation( "Unable to render ", tikz ) ) );
+        fi;
+        RemoveFile( svgfile );
+    fi;
+  fi;
+
+  if IsExistingFile( Concatenation(fn, ".log") ) then
+    RemoveFile( Concatenation(fn, ".log") );
+  fi;
+  if IsExistingFile( Concatenation(fn, ".log2") ) then
+    RemoveFile( Concatenation(fn, ".log2") );
+  fi;
+  if IsExistingFile( Concatenation(fn, ".aux") ) then
+    RemoveFile( Concatenation(fn, ".aux") );
+  fi;
+  if IsExistingFile( Concatenation(fn, ".pdf") ) then
+    RemoveFile( Concatenation(fn, ".pdf") );
+  fi;
+  if IsExistingFile( Concatenation(fn, ".tex") ) then
+    RemoveFile( Concatenation(fn, ".tex") );
+  fi;
+  return tojupyter;
+end);
+
+
 # This is another ugly hack to make the GAP Help System
 # play ball. Let us please fix this soon.
 # TODO: This is now broken because we got rid of parsing
