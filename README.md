@@ -23,3 +23,5 @@ To use it, use one of the following:
 ```
 
 Note that this kernel requires you to set the environment variable `JUPYTER_GAP_EXECUTABLE` to a valid gap executable or `gap.sh` script, it also depends on the packages [json](https://github.com/gap-packages/json) and [io](https://github.com/gap-packages/io) in recent versions.
+
+If you want to use the `JUPYTER_DotSplash` function, you will need `graphviz` installed and in the path. If you want to use `JUPYTER_TikZSplash`, you will need a `TeX` installation including the `TikZ` packages with `pdflatex` and and `pdf2svg` installed.
