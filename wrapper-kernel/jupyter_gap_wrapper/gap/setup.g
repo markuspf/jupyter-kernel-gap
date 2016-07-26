@@ -5,6 +5,15 @@ LoadPackage("json");
 last := "2b defined";
 last2 := "2b defined";
 
+# Compatibility hacks for versions < 4.9.0
+if ViewString(true) = "<object>" then
+    InstallMethod(ViewString, "for a boolean", true, [IsBool], 5, String);
+fi;
+
+if ViewString(rec()) = "<object>" then
+    InstallMethod(ViewString, "for a record", true, [IsRecord], 5, String);
+fi;
+
 # Set the prompt to something that pexpect can
 # handle
 BindGlobal("PrintPromptHook",
