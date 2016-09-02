@@ -1,6 +1,4 @@
 #  Unbind(PrintPromptHook);
-LoadPackage("json");
-
 last := "2b defined";
 last2 := "2b defined";
 
@@ -31,6 +29,7 @@ function()
   PRINT_CPROMPT(cp);
 end);
 
+
 # Get a handle on stdout so we can print to
 # it bypassing GAPs formatting.
 BindGlobal("JUPYTER_stdout",
@@ -58,10 +57,23 @@ function(os, r)
     WriteAll(os, "}");
 end);
 
+__JUPYTER_escapes := List(['\\', '"'], INT_CHAR);
 InstallMethod(ToJsonStream, "for a string",
 [IsOutputTextStream, IsString],
 function(os, s)
-    WriteAll(os, STRINGIFY("\"", s, "\""));
+    local ch, byte, esc;
+    esc := __JUPYTER_escapes;
+    WriteByte(os, INT_CHAR('"'));
+    for ch in s do
+        byte := INT_CHAR(ch);
+        if byte > 3 then
+            if byte in esc then
+               WriteByte(os, 92);
+            fi;
+            WriteByte(os, byte);
+        fi;
+    od;
+    WriteByte(os, INT_CHAR('"')); 
 end);
 
 InstallMethod(ToJsonStream, "for a list",
@@ -74,6 +86,12 @@ InstallMethod(ToJsonStream, "for an integer",
 [IsOutputTextStream, IsInt],
 function(os, i)
    AppendTo(os, String(i));
+end);
+
+InstallMethod(ToJsonStream, "for a bool",
+[IsOutputTextStream, IsBool],
+function(os, b)
+   WriteAll(os, ViewString(b));
 end);
 
 BindGlobal("JUPYTER_print",
