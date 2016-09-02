@@ -9,8 +9,8 @@ The `wrapper-kernel` is a Jupyter kernel based on the [bash wrapper kernel](http
 to install
 
 ```shell
+    cd wrapper-kernel
     python setup.py install
-    python -m jupyter_gap_wrapper.install
 ```
 
 To use it, use one of the following:
