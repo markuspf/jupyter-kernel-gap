@@ -51,6 +51,7 @@ class GAPKernel(Kernel):
     # At the moment I can only get jupyter notebook to display
     # error messages from the kernel. So be it.
     def _loghack(self, *objs):
+        pass
         self.log.error(objs)
 
     # Is this good enough?
