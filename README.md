@@ -3,13 +3,10 @@ Jupyter kernels for GAP
 
 Please note that this software is still in the early stages of development, though should be reasonably usable.
 
-## wrapper-kernel
-
 The `wrapper-kernel` is a Jupyter kernel based on the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
 to install
 
 ```shell
-    cd wrapper-kernel
     python setup.py install
 ```
 
