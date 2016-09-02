@@ -78,13 +78,11 @@ class GAPKernel(Kernel):
         try:
             # setup.g contains functions needed for Jupyter interfacing
             setupg = path.dirname(path.abspath(__file__))
-            gap_run_command = getenv(self._env_executable)
-            if gap_run_command is None:
-                raise NameError("Please set %s in your environment to a valid gap executable" % (self._env_executable))  
+            gap_run_command = getenv(self._env_executable, "gap")
             gap_extra_options = getenv(self._env_options, "")
             self._loghack("starting GAP: %s" % (gap_run_command))
             self.gapwrapper = replwrap.REPLWrapper(
-                                gap_run_command 
+                                gap_run_command
                                 + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
                               , u'gap|| '
                               , None
