@@ -1,5 +1,4 @@
 #  Unbind(PrintPromptHook);
-LoadPackage("io");
 LoadPackage("json");
 
 last := "2b defined";
@@ -35,10 +34,10 @@ end);
 # Get a handle on stdout so we can print to
 # it bypassing GAPs formatting.
 BindGlobal("JUPYTER_stdout",
-           IO_WrapFD(IO_dup(0), 4096, false));
+           OutputTextFile("*stdout*", true));
 BindGlobal("JUPYTER_print",
 function(str)
-    IO_Write(JUPYTER_stdout, str);
+    WriteAll(JUPYTER_stdout, str);
 end);
 
 BindGlobal("JUPYTER_RunCommand",
