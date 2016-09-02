@@ -16,7 +16,7 @@ kernel_json = {"argv":[sys.executable,"-m","jupyter_gap_wrapper", "-f", "{connec
 }
 
 # Write kernel spec in a temporary directory
-kernel_json_tempfile = NamedFileInTemporaryDirectory('kernel.json')
+kernel_json_tempfile = NamedFileInTemporaryDirectory('kernel.json', 'w')
 kernel_json_file = kernel_json_tempfile.file
 with kernel_json_file:
     json.dump(kernel_json, kernel_json_file, sort_keys=True)
