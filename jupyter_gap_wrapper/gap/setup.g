@@ -1,6 +1,4 @@
 #  Unbind(PrintPromptHook);
-LoadPackage("json");
-
 last := "2b defined";
 last2 := "2b defined";
 
@@ -31,13 +29,76 @@ function()
   PRINT_CPROMPT(cp);
 end);
 
+
 # Get a handle on stdout so we can print to
 # it bypassing GAPs formatting.
 BindGlobal("JUPYTER_stdout",
            OutputTextFile("*stdout*", true));
+DeclareOperation("ToJsonStream", [IsOutputTextStream, IsObject]);
+
+InstallMethod(ToJsonStream, "for a record",
+[IsOutputTextStream, IsRecord],
+function(os, r)
+    local i, k, l, AppendComponent;
+    AppendComponent := function(k, v)
+        WriteAll(os, STRINGIFY("\"", k, "\" : "));
+        ToJsonStream(os, v);
+    end;
+
+    WriteAll(os, "{");
+    k := NamesOfComponents(r);
+    for i in [1..Length(k)-1] do
+        AppendComponent(k[i], r.(k[i]));
+        WriteAll(os, ",");
+    od;
+    if Length(k) > 0 then
+        AppendComponent(k[Length(k)], r.(k[Length(k)]));
+    fi;
+    WriteAll(os, "}");
+end);
+
+__JUPYTER_escapes := List(['\\', '"'], INT_CHAR);
+InstallMethod(ToJsonStream, "for a string",
+[IsOutputTextStream, IsString],
+function(os, s)
+    local ch, byte, esc;
+    esc := __JUPYTER_escapes;
+    WriteByte(os, INT_CHAR('"'));
+    for ch in s do
+        byte := INT_CHAR(ch);
+        if byte > 3 then
+            if byte in esc then
+               WriteByte(os, 92);
+               WriteByte(os, 92);
+               WriteByte(os, 92);
+            fi;
+            WriteByte(os, byte);
+        fi;
+    od;
+    WriteByte(os, INT_CHAR('"')); 
+end);
+
+InstallMethod(ToJsonStream, "for a list",
+[IsOutputTextStream, IsList],
+function(os, l)
+   WriteAll(os, STRINGIFY("\"", l, "\""));
+end);
+
+InstallMethod(ToJsonStream, "for an integer",
+[IsOutputTextStream, IsInt],
+function(os, i)
+   AppendTo(os, String(i));
+end);
+
+InstallMethod(ToJsonStream, "for a bool",
+[IsOutputTextStream, IsBool],
+function(os, b)
+   WriteAll(os, ViewString(b));
+end);
+
 BindGlobal("JUPYTER_print",
-function(str)
-    WriteAll(JUPYTER_stdout, str);
+function(obj)
+    ToJsonStream(JUPYTER_stdout, obj);
 end);
 
 BindGlobal("JUPYTER_RunCommand",
@@ -49,28 +110,28 @@ function(string)
 
   if result[1] = true then
     if Length(result) = 1 then
-        JUPYTER_print( GapToJsonString( rec( status := "ok" ) ) );
+        JUPYTER_print( rec( status := "ok" ) );
     elif Length(result) = 2 then
         last2 := last;
         last := result[2];
 
         if IsRecord(result[2]) and IsBound(result[2].json) then
-            JUPYTER_print( GapToJsonString( rec(
+            JUPYTER_print( rec(
                                 status := "ok",
                                 result := result[2]
-                               ) ) );
+                               ) );
         else
-            JUPYTER_print( GapToJsonString( rec(
+            JUPYTER_print( rec(
                                 status := "ok",
                                 result := rec( name := "stdout"
                                              , text := ViewString(result[2]))
-                               ) ) );
+                               ) );
         fi;
     else
-        JUPYTER_print( GapToJsonString( rec( status := "error") ) );
+        JUPYTER_print( rec( status := "error") );
     fi;
   else
-      JUPYTER_print( GapToJsonString( rec( status := "error") ) );
+      JUPYTER_print( rec( status := "error") );
   fi;
 end);
 
