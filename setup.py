@@ -5,6 +5,7 @@ import sys
 import json
 from distutils.core import setup
 from IPython.utils.tempdir import NamedFileInTemporaryDirectory
+from jupyter_gap_wrapper import __version__
 
 
 # Kernel spec for GAP
@@ -28,7 +29,7 @@ kernelfiles = [kernel_json_file.name,
 
 
 setup( name="jupyter_gap_wrapper"
-     , version="0.6"
+     , version=__version__
      , description="A Jupyter wrapper kernel for GAP"
      , author="Markus Pfeiffer"
      , url="https://github.com/gap-system/jupyter-gap"
