@@ -11,6 +11,104 @@ if ViewString(rec()) = "<object>" then
     InstallMethod(ViewString, "for a record", true, [IsRecord], 5, String);
 fi;
 
+if ViewString(FamilyObj(1)) = "<object>" then
+    InstallMethod(ViewString, "for a family", true, [IsFamily], 5,
+    function ( family )
+        local  res, req_flags, imp_flags, fnams;
+
+        res := "";
+        Append(res, STRINGIFY("name:\n    ", family!.NAME));
+        req_flags := TRUES_FLAGS(family!.REQ_FLAGS);
+        fnams := NamesFilter(req_flags);
+        fnams := JoinStringsWithSeparator(fnams, "\n    ");
+        Append(res, STRINGIFY("\nrequired filters:\n    ", fnams));
+        imp_flags := family!.IMP_FLAGS;
+        if imp_flags <> [  ]  then
+            fnams := NamesFilter(TRUES_FLAGS(imp_flags));
+            fnams := JoinStringsWithSeparator(fnams, "\n    ");
+            Append(res, STRINGIFY( "\nimplied filters:\n    ", fnams));
+        fi;
+        return res;
+    end);
+fi;
+
+if ViewString(TypeObj(1)) = "<object>" then
+    InstallMethod(ViewString, "for a type", true, [IsType], 5,
+    function ( type )
+        local  res, family, flags, data, fnams;
+
+        res := "";
+        family := type![1];
+        flags := type![2];
+        data := type![POS_DATA_TYPE];
+
+        Append(res, STRINGIFY("family:\n    ", family!.NAME));
+        if flags <> [  ] or data <> false  then
+            fnams := NamesFilter(TRUES_FLAGS(flags));
+            fnams := JoinStringsWithSeparator(fnams, "\n    ");
+            Append(res, STRINGIFY("\nfilters:\n    ", fnams));
+            if data <> false  then
+                Append(res, STRINGIFY("\ndata:\n", data ) );
+            fi;
+        fi;
+        return res;
+    end);
+fi;
+
+if ViewString(Size) = "<object>" then
+InstallMethod( ViewString, "for an operation", true, [IsOperation], 0,
+function ( op )
+    local class,  flags,  types,  catok,  repok,  propok,  seenprop,
+          t;
+    class := "Operation";
+    if IS_IDENTICAL_OBJ(op,IS_OBJECT) then
+        class := "Filter";
+    elif op in CONSTRUCTORS then
+        class := "Constructor";
+    elif IsFilter(op) then
+        class := "Filter";
+        flags := TRUES_FLAGS(FLAGS_FILTER(op));
+        types := INFO_FILTERS{flags};
+        catok := true;
+        repok := true;
+        propok := true;
+        seenprop := false;
+        for t in types do
+            if not t in FNUM_REPS then
+                repok := false;
+            fi;
+            if not t in FNUM_CATS then
+                catok := false;
+            fi;
+            if not t in FNUM_PROS and not t in FNUM_TPRS then
+                propok := false;
+            fi;
+            if t in FNUM_PROS then
+                seenprop := true;
+            fi;
+        od;
+        if seenprop and propok then
+            class := "Property";
+        elif catok then
+            class := "Category";
+        elif repok then
+            class := "Representation";
+        fi;
+    elif Tester(op) <> false  then
+        # op is an attribute
+        class := "Attribute";
+    fi;
+    return STRINGIFY("<", class, " \"",
+                     NAME_FUNC(op), "\">");
+end);
+fi;
+
+BindGlobal("DisplayCategoriesOfObject",
+function(obj)
+    Print(JoinStringsWithSeparator(CategoriesOfObject(obj), "\n"));
+end);
+
+
 # Set the prompt to something that pexpect can
 # handle
 BindGlobal("PrintPromptHook",
@@ -57,23 +155,30 @@ function(os, r)
     WriteAll(os, "}");
 end);
 
-__JUPYTER_escapes := List(['\\', '"'], INT_CHAR);
 InstallMethod(ToJsonStream, "for a string",
 [IsOutputTextStream, IsString],
 function(os, s)
-    local ch, byte, esc;
-    esc := __JUPYTER_escapes;
+    local ch, byte;
+
     WriteByte(os, INT_CHAR('"'));
     for ch in s do
         byte := INT_CHAR(ch);
         if byte > 3 then
-            if byte in esc then
-               WriteByte(os, 92);
+            if byte in [ 92, 34 ] then
+                WriteByte(os, 92);
+                WriteByte(os, byte);
+            elif byte = 10 then # \n
+                WriteByte(os, 92);
+                WriteByte(os, 110); # n
+            elif byte = 13 then
+                WriteByte(os, 92); # \r
+                WriteByte(os, 114); # r
+            else;
+                WriteByte(os, byte);
             fi;
-            WriteByte(os, byte);
         fi;
     od;
-    WriteByte(os, INT_CHAR('"')); 
+    WriteByte(os, INT_CHAR('"'));
 end);
 
 InstallMethod(ToJsonStream, "for a list",
