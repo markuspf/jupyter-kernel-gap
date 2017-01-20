@@ -33,6 +33,7 @@ setup( name="jupyter-kernel-gap"
      , description="A Jupyter kernel for GAP"
      , long_description="A Jupyter kernel for the GAP programming language that wraps GAP's REPL"
      , author="Markus Pfeiffer"
+     , author_email="markus.pfeiffer@st-andrews.ac.uk"
      , url="https://github.com/gap-packages/jupyter-gap"
      , license="BSD"
      , keywords='jupyter gap computer algebra'
