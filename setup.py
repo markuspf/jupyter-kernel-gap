@@ -31,10 +31,21 @@ kernelfiles = [kernel_json_file.name,
 setup( name="jupyter_gap_wrapper"
      , version=__version__
      , description="A Jupyter wrapper kernel for GAP"
+     , long_description="A Jupyter kernel for the GAP programming language that wraps GAP's REPL"
      , author="Markus Pfeiffer"
-     , url="https://github.com/gap-system/jupyter-gap"
+     , url="https://github.com/gap-packages/jupyter-gap"
+     , license="BSD"
+     , keywords='jupyter gap computer algebra'
      , packages=["jupyter_gap_wrapper"]
      , package_dir={"jupyter_gap_wrapper": "jupyter_gap_wrapper"}
      , package_data={"jupyter_gap_wrapper": ["gap/setup.g","resources/logo-32x32.png","resources/logo-64x64.png"]}
      , data_files=[(kernelpath, kernelfiles)]
+     , classifiers=[
+         'Development Status :: 3 - Alpha',
+         'Intended Audience :: Science/Research',
+         'Topic :: Scientific/Engineering :: Mathematics', 
+         'License :: OSI Approved :: BSD License',
+         'Programming Language :: Python :: 2',
+         'Programming Language :: Python :: 3',
+     ]
      )
