@@ -1,3 +1,6 @@
 *.ipynb
 MANIFEST
 dist
+
+.idea
+**.iml
