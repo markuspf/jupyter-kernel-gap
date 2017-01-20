@@ -15,7 +15,7 @@ __version__ = '0.4'
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 class GAPKernel(Kernel):
-    implementation = 'jupyter_gap_wrapper'
+    implementation = 'jupyter_kernel_gap'
     implementation_version = __version__
 
     _env_executable = 'JUPYTER_GAP_EXECUTABLE'

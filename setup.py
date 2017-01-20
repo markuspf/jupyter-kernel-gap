@@ -5,11 +5,11 @@ import sys
 import json
 from distutils.core import setup
 from IPython.utils.tempdir import NamedFileInTemporaryDirectory
-from jupyter_gap_wrapper import __version__
+from jupyter_kernel_gap import __version__
 
 
 # Kernel spec for GAP
-kernel_json = {"argv":[sys.executable,"-m","jupyter_gap_wrapper", "-f", "{connection_file}"],
+kernel_json = {"argv":[sys.executable,"-m","jupyter_kernel_gap", "-f", "{connection_file}"],
  "display_name":"GAP",
  "language":"gap",
  "codemirror_mode":"gap", # note that this does not exist yet
@@ -24,21 +24,21 @@ with kernel_json_file:
 
 kernelpath = os.path.join("share", "jupyter", "kernels", "gap")
 kernelfiles = [kernel_json_file.name,
-        "jupyter_gap_wrapper/resources/logo-32x32.png",
-        "jupyter_gap_wrapper/resources/logo-64x64.png"]
+        "jupyter_kernel_gap/resources/logo-32x32.png",
+        "jupyter_kernel_gap/resources/logo-64x64.png"]
 
 
-setup( name="jupyter_gap_wrapper"
+setup( name="jupyter-kernel-gap"
      , version=__version__
-     , description="A Jupyter wrapper kernel for GAP"
+     , description="A Jupyter kernel for GAP"
      , long_description="A Jupyter kernel for the GAP programming language that wraps GAP's REPL"
      , author="Markus Pfeiffer"
      , url="https://github.com/gap-packages/jupyter-gap"
      , license="BSD"
      , keywords='jupyter gap computer algebra'
-     , packages=["jupyter_gap_wrapper"]
-     , package_dir={"jupyter_gap_wrapper": "jupyter_gap_wrapper"}
-     , package_data={"jupyter_gap_wrapper": ["gap/setup.g","resources/logo-32x32.png","resources/logo-64x64.png"]}
+     , packages=["jupyter_kernel_gap"]
+     , package_dir={"jupyter_kernel_gap": "jupyter_kernel_gap"}
+     , package_data={"jupyter_kernel_gap": ["gap/setup.g","resources/logo-32x32.png","resources/logo-64x64.png"]}
      , data_files=[(kernelpath, kernelfiles)]
      , classifiers=[
          'Development Status :: 3 - Alpha',
