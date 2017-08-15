@@ -237,36 +237,38 @@ end);
 
 BindGlobal("JUPYTER_RunCommand",
 function(string)
-  local stream, result;
+  local stream, result, r;
 
   stream := InputTextString(string);
-  result := READ_COMMAND_REAL(stream, true);
+  result := READ_ALL_COMMANDS(stream, true);
 
-  if result[1] = true then
-    if Length(result) = 1 then
-        JUPYTER_print( rec( status := "ok" ) );
-    elif Length(result) = 2 then
-        last2 := last;
-        last := result[2];
+  for r in result do
+      if r[1] = true then # statement executed successfully
+          if Length(r) = 1 then    # no return value
+              JUPYTER_print( rec( status := "ok" ) );
+          elif Length(r) = 2 then  # print return value
+              last2 := last;
+              last := r[2];
 
-        if IsRecord(result[2]) and IsBound(result[2].json) then
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := result[2]
-                               ) );
-        else
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := rec( name := "stdout"
-                                             , text := ViewString(result[2]))
-                               ) );
-        fi;
-    else
-        JUPYTER_print( rec( status := "error") );
-    fi;
-  else
-      JUPYTER_print( rec( status := "error") );
-  fi;
+              if IsRecord(r[2]) and IsBound(r[2].json) then
+                  JUPYTER_print( rec(
+                                      status := "ok",
+                                      result := r[2]
+                                     ) );
+              else
+                  JUPYTER_print( rec(
+                                      status := "ok",
+                                      result := rec( name := "stdout"
+                                                   , text := Concatenation(ViewString(r[2]), "\n"))
+                                     ) );
+              fi;
+          else # this should really not happen
+              JUPYTER_print( rec( status := "error") );
+          fi;
+      else # Error
+          JUPYTER_print( rec( status := "error") );
+      fi;
+  od;
 end);
 
 # This is a rather basic helper function to do

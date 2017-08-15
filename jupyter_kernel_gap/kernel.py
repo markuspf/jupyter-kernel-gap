@@ -66,8 +66,17 @@ class GAPKernel(Kernel):
         jsonl = string.find('{')
         jsonr = string.rfind('}')
 
-        res_json = string[jsonl:jsonr+1]
+        # This can now contain more than one json dict.
+        # I will punt fixing this until after I move to
+        # direct ZMQ or libgap
+        res_json = string[jsonl:jsonr+1].split("}{")
+        if len(res_json) > 1:
+            res_json[0] = res_json[0] + '}'
+            for i in xrange(1,len(res_json)-1):
+                res_json[i] = '{' + res_json[i] + '}'
+            res_json[-1] = '{' + res_json[-1]
         res_rest = string[:jsonl] + string[jsonr+1:]
+
         return (res_json,res_rest)
 
     def _start_gap(self):
@@ -119,31 +128,40 @@ class GAPKernel(Kernel):
             self._start_gap()
 
         if not silent:
-            (res_json, res_rest) = self._sep_response(output)
-            self._loghack("json part: %s" % (res_json))
+            (res_jsons, res_rest) = self._sep_response(output)
+            self._loghack("json part: %s" % (res_jsons))
             self._loghack("rest part: %s" % (res_rest))
-            jsonp = json.loads(res_json)
 
-            if jsonp['status'] == 'ok':
-                if 'result' in jsonp:
-                    stream_content = jsonp['result']
-                    if 'data' in jsonp['result']:
-                        self.send_response(self.iopub_socket, 'display_data', stream_content)
-                    else:
-                        self.send_response(self.iopub_socket, 'stream', stream_content)
+            err = False
+            for res_json in res_jsons:
+                self._loghack("current json: %s" % (res_json))
+                jsonp = json.loads(res_json)
+                self._loghack("parsed json: %s" % (jsonp))
+                if jsonp['status'] == 'ok':
+                    if 'result' in jsonp:
+                        stream_content = jsonp['result']
+                        if 'data' in jsonp['result']:
+                            self.send_response(self.iopub_socket, 'display_data', stream_content)
+                        else:
+                            self.send_response(self.iopub_socket, 'stream', stream_content)
 
-                stream_content = {'name': 'stdout', 'text': res_rest}
-                self.send_response(self.iopub_socket, 'stream', stream_content)
-                return {'status': 'ok', 'execution_count': self.execution_count,
-                        'payload': [], 'user_expressions': {}}
-            elif jsonp['status'] == 'error':
-                stream_content = {'name': 'stderr', 'text': res_rest }
-                self.send_response(self.iopub_socket, 'stream', stream_content)
-                return {'status': 'error', 'execution_count': self.execution_count,
-                        'ename': '', 'evalue': str(-1), 'traceback': []}
-            else:
+                    stream_content = {'name': 'stdout', 'text': res_rest}
+                    self.send_response(self.iopub_socket, 'stream', stream_content)
+                elif jsonp['status'] == 'error':
+                    err = True
+                    stream_content = {'name': 'stderr', 'text': res_rest }
+                    self.send_response(self.iopub_socket, 'stream', stream_content)
+                else:
+                    err = True
+
+            if err:
                 return {'status': 'error', 'execution_count': self.execution_count,
                         'ename': '', 'evalue': str(-2), 'traceback': []}
+            else:
+                return {'status': 'ok', 'execution_count': self.execution_count,
+                        'payload': [], 'user_expressions': {}}
+ 
+            
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
