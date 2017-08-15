@@ -1,9 +1,8 @@
 # jupyter-kernel-gap
-Jupyter kernel for GAP 
 
-This `wrapper-kernel` is a Jupyter kernel for the [GAP Computer Algebra System](https://www.gap-system.org/)
-based on the same ideas as the [bash wrapper kernel](https://github.com/takluyver/bash_kernel),
-to install
+A Jupyter kernel for the [GAP Computer Algebra System](https://www.gap-system.org/).
+
+To install
 
 ```shell
     python setup.py install
@@ -23,3 +22,6 @@ variable `JUPYTER_GAP_EXECUTABLE` to a valid gap executable.
 If you want to use the `JUPYTER_DotSplash` function, you will need `graphviz` installed
 and in the path. If you want to use `JUPYTER_TikZSplash`, you will need a `TeX` installation
 including the `TikZ` packages with `pdflatex` and and `pdf2svg` installed.
+
+Note that a recent version of GAP is required. At the moment this means you have to use GAP
+from the master branch, or wait for GAP 4.9 to appear. 
