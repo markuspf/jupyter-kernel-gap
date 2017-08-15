@@ -39,7 +39,10 @@ setup( name="jupyter-kernel-gap"
      , keywords='jupyter gap computer algebra'
      , packages=["jupyter_kernel_gap"]
      , package_dir={"jupyter_kernel_gap": "jupyter_kernel_gap"}
-     , package_data={"jupyter_kernel_gap": ["gap/setup.g","resources/logo-32x32.png","resources/logo-64x64.png"]}
+     , package_data={"jupyter_kernel_gap": ["gap/setup.g",
+                                            "resources/logo-32x32.png",
+                                            "resources/logo-64x64.png",
+                                            "resources/gap-mode/*"]}
      , data_files=[(kernelpath, kernelfiles)]
      , classifiers=[
          'Development Status :: 3 - Alpha',
