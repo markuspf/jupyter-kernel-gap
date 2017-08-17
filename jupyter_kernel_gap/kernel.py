@@ -72,7 +72,7 @@ class GAPKernel(Kernel):
         res_json = string[jsonl:jsonr+1].split("}{")
         if len(res_json) > 1:
             res_json[0] = res_json[0] + '}'
-            for i in xrange(1,len(res_json)-1):
+            for i in range(1,len(res_json)-1):
                 res_json[i] = '{' + res_json[i] + '}'
             res_json[-1] = '{' + res_json[-1]
         res_rest = string[:jsonl] + string[jsonr+1:]
