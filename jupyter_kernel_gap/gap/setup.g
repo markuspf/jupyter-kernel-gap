@@ -387,6 +387,70 @@ function(tikz)
 end);
 
 
+BindGlobal("JUPYTER_Inspect",
+function(str, pos)
+    local cpos, ipos, ident, ws, sep, fapp, result, found,
+          var, textplain, texthtml;
+
+    found := false;
+    textplain := "";
+    texthtml := "";
+
+    # extract keyword/identifier
+    # go to the left of pos
+    # TODO: This should really use a GAP Parser or the
+    #       SYNTAX_TREE module; SYNTAX_TREE doesn't have position
+    #       information
+    # Once we can parse code partially, we could even try to evaluate
+    # subexpressions for help tips?
+
+    # ( is not a separator, because we use it to
+    # detect function application
+    sep := [") \t\n\r;:=<>=!."];
+
+    cpos := Minimum(pos, Length(str));
+    ipos := 1;
+    fapp := false;
+    ident := [];
+
+    # skip whitespace
+    while cpos > 0 and (str[cpos] in " \t") do cpos := cpos - 1; od;
+    while cpos > 0 and (not str[cpos] in sep) do
+        if str[cpos] = '(' then
+            fapp := true;
+        else
+            ident[ipos] := str[cpos];
+            ipos := ipos + 1;
+        fi;
+        cpos := cpos - 1;
+    od;
+    ident := Reversed(ident);
+
+    if ident <> "" then
+        found := true;
+        if fapp then
+            # find documentation for function application
+        elif IsBoundGlobal(ident) then
+            var := ValueGlobal(ident);
+            if IsFunction(var) then
+                # try finding doc?
+            elif IsObject(var) then
+                # Display Known Properties/Attributes/Categories/Types?
+                textplain := DisplayString(TypeObj(var));
+            fi;
+        fi;
+    fi;
+    JUPYTER_print( rec( status := "ok",
+                        found := found,
+                        data := rec( text\/html := texthtml,
+                                     text\/plain := textplain,
+                        metadata := rec( text\/html := "",
+                                         text\/plain := "" )
+                      ) ) );
+end);
+
+
+
 # This is another ugly hack to make the GAP Help System
 # play ball. Let us please fix this soon.
 # TODO: This is now broken because we got rid of parsing

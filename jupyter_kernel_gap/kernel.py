@@ -160,8 +160,6 @@ class GAPKernel(Kernel):
             else:
                 return {'status': 'ok', 'execution_count': self.execution_count,
                         'payload': [], 'user_expressions': {}}
- 
-            
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
@@ -177,6 +175,8 @@ class GAPKernel(Kernel):
         if not code or code[-1] == ' ':
             return default
 
+
+        # TODO: Move this to GAP level and use GAP Parser
         tokens = code
         for ch in ";+*-()[]/,.?=:":
             if ch in tokens:
@@ -204,4 +204,13 @@ class GAPKernel(Kernel):
                 'status': 'ok'}
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
-        return {'status': 'ok', 'found': 'true', 'data': 'Spass hassen spass', 'metadata':''}
+        self._loghack("inspecting %s %s" % (code, cursor_pos))
+        cmd = 'JUPYTER_Inspect("%s", %s);' % (code, cursor_pos)
+        output = self.gapwrapper.run_command(cmd).rstrip()
+        (res_jsons, res_rest) = self._sep_response(output)
+        self._loghack("json part: %s" % (res_jsons))
+        self._loghack("rest part: %s" % (res_rest))
+        self._loghack("current json: %s" % (res_jsons[0]))
+        jsonp = json.loads(res_jsons[0])
+        self._loghack("parsed json: %s" % (jsonp))
+        return jsonp
