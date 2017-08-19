@@ -45,7 +45,7 @@ def install_kernel(c):
         install_kernel_spec(td, kernel_name='GAP-4.9', user=user)
 
     c.announce("Installing nbextension for syntax hilighting")
-    install_nbextension('jupyter_kernel_gap/resources/gap-mode/',
+    install_nbextension('jupyter_kernel_gap/resources/gap-mode',
                         overwrite=True, user=user)
     enable_nbextension('notebook', 'gap-mode/main',)
 
