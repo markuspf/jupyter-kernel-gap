@@ -135,7 +135,7 @@ class GAPKernel(Kernel):
             err = False
             for res_json in res_jsons:
                 self._loghack("current json: %s" % (res_json))
-                jsonp = json.loads(res_json)
+                jsonp = json.loads(res_json, strict=False)
                 self._loghack("parsed json: %s" % (jsonp))
                 if jsonp['status'] == 'ok':
                     if 'result' in jsonp:
@@ -211,6 +211,6 @@ class GAPKernel(Kernel):
         self._loghack("json part: %s" % (res_jsons))
         self._loghack("rest part: %s" % (res_rest))
         self._loghack("current json: %s" % (res_jsons[0]))
-        jsonp = json.loads(res_jsons[0])
+        jsonp = json.loads(res_jsons[0], strict=False)
         self._loghack("parsed json: %s" % (jsonp))
         return jsonp
