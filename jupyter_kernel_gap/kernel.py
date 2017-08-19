@@ -51,8 +51,8 @@ class GAPKernel(Kernel):
     # At the moment I can only get jupyter notebook to display
     # error messages from the kernel. So be it.
     def _loghack(self, *objs):
-        pass
         self.log.error(objs)
+        pass
 
     # Is this good enough?
     def _escape_code(self, code):
@@ -144,15 +144,19 @@ class GAPKernel(Kernel):
                             self.send_response(self.iopub_socket, 'display_data', stream_content)
                         else:
                             self.send_response(self.iopub_socket, 'stream', stream_content)
-
-                    stream_content = {'name': 'stdout', 'text': res_rest}
-                    self.send_response(self.iopub_socket, 'stream', stream_content)
                 elif jsonp['status'] == 'error':
                     err = True
-                    stream_content = {'name': 'stderr', 'text': res_rest }
-                    self.send_response(self.iopub_socket, 'stream', stream_content)
+                    # We do not have specific error messages for each result yet,
+                    # so we can only burst the error out wholesale. (and the error message is
+                    # just what we have scraped)
+                    # stream_content = {'name': 'stderr', 'text': res_rest }
+                    # self.send_response(self.iopub_socket, 'stream', stream_content)
                 else:
                     err = True
+
+            if len(res_rest.strip()) > 0:
+                stream_content = {'name': 'stderr', 'text': res_rest}
+                self.send_response(self.iopub_socket, 'stream', stream_content)
 
             if err:
                 return {'status': 'error', 'execution_count': self.execution_count,
@@ -167,50 +171,24 @@ class GAPKernel(Kernel):
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
-        code = code[:cursor_pos]
-        default = {'matches': [], 'cursor_start': 0,
-                   'cursor_end': cursor_pos, 'metadata': dict(),
-                   'status': 'ok'}
-
-        if not code or code[-1] == ' ':
-            return default
-
-
-        # TODO: Move this to GAP level and use GAP Parser
-        tokens = code
-        for ch in ";+*-()[]/,.?=:":
-            if ch in tokens:
-                tokens = tokens.replace(ch, ' ')
-
-        tokens = tokens.split()
-        if not tokens:
-            return default
-
-        matches = []
-        token = tokens[-1]
-        start = cursor_pos - len(token)
-
+        self._loghack("completing %s %s" % (code, cursor_pos))
         # complete bound global variables
-        cmd = 'JUPYTER_Completion("%s");' % token
+        cmd = 'JUPYTER_Completion("%s", %s);' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
-        matches.extend(output.split())
-
-        if not matches:
-            return default
-        matches = [m for m in matches if m.startswith(token)]
-
-        return {'matches': sorted(matches), 'cursor_start': start,
-                'cursor_end': cursor_pos, 'metadata': dict(),
-                'status': 'ok'}
+        self._loghack("output %s" % (output,))
+        (res_jsons, res_rest) = self._sep_response(output)
+        jsonp = json.loads(res_jsons[0], strict=False)
+        self._loghack("parsed json %s" % (jsonp,))
+        return jsonp
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
         self._loghack("inspecting %s %s" % (code, cursor_pos))
-        cmd = 'JUPYTER_Inspect("%s", %s);' % (code, cursor_pos)
+        cmd = 'JUPYTER_Inspect("%s", %s);' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
         (res_jsons, res_rest) = self._sep_response(output)
         self._loghack("json part: %s" % (res_jsons))
         self._loghack("rest part: %s" % (res_rest))
         self._loghack("current json: %s" % (res_jsons[0]))
         jsonp = json.loads(res_jsons[0], strict=False)
-        self._loghack("parsed json: %s" % (jsonp))
+        self._loghack("parsed json: %s" % (jsonp,))
         return jsonp

@@ -149,10 +149,7 @@ end);
 BindGlobal("LoadInspectionData",
 function()
     local tree;
-    
-    
 end);
-
 
 
 # Set the prompt to something that pexpect can
@@ -230,7 +227,15 @@ end);
 InstallMethod(ToJsonStream, "for a list",
 [IsOutputTextStream, IsList],
 function(os, l)
-   WriteAll(os, STRINGIFY("\"", l, "\""));
+    AppendTo(os, "[");
+    if Length(l) > 0 then
+        for i in [1..Length(l)-1] do
+            ToJsonStream(os, l[i]);
+            AppendTo(os, ",");
+        od;
+        ToJsonStream(os, l[Length(l)]);
+    fi;
+    AppendTo(os, "]");
 end);
 
 InstallMethod(ToJsonStream, "for an integer",
@@ -283,23 +288,6 @@ function(string)
       else # Error
           JUPYTER_print( rec( status := "error") );
       fi;
-  od;
-end);
-
-# This is a rather basic helper function to do
-# completion. It is related to the completion
-# function provided in lib/cmdledit.g in the GAP
-# distribution
-BindGlobal("JUPYTER_Completion",
-function(tok)
-  local cand, i;
-
-  cand := IDENTS_BOUND_GVARS();
-
-  for i in cand do
-    if PositionSublist(i, tok) = 1 then
-      Print(i, "\n");
-    fi;
   od;
 end);
 
@@ -522,6 +510,53 @@ function(str, pos)
                       ) ) );
 end);
 
+# This is a rather basic helper function to do
+# completion. It is related to the completion
+# function provided in lib/cmdledit.g in the GAP
+# distribution
+BindGlobal("JUPYTER_Completion",
+function(code, cursor_pos)
+    local default, cand, i, matches, tokens, tok;
+
+    default := rec( matches := [], cursor_start := 0,
+                    cursor_end := cursor_pos, metadata := rec(),
+                    status := "ok" );
+
+    code := code{[1..cursor_pos]};
+    if Length(code) = 0 then
+        JUPYTER_print(default);
+    fi;
+    tokens := SplitString(code, "():=<>,.[]?-+*/; ");
+
+    if tokens = [] then
+        JUPYTER_print(default);
+    fi;
+
+    tok := tokens[Length(tokens)];
+    cand := IDENTS_BOUND_GVARS();
+    matches := Filtered(cand, i -> PositionSublist(i, tok) = 1);
+    SortBy(matches, Length);
+    JUPYTER_print( rec( matches := matches
+                      , cursor_start := cursor_pos - Length(tok)
+                      , cursor_end := cursor_pos
+                      , metadata := rec()
+                      , status := "ok" ) );
+end);
+
+MakeReadWriteGlobal("Print");
+UnbindGlobal("Print");
+BindGlobal("Print",
+          function(args...)
+              local str, ostream, prt;
+              str := "";
+              ostream := OutputTextString(str, false);
+              Add(args, ostream, 1);
+              CallFuncList(PrintTo, args);
+              JUPYTER_print(rec( status := "ok",
+                                 result := rec( name := "stdout"
+                                              , text := str )));
+          end);
+MakeReadOnlyGlobal("Print");
 
 
 # This is another ugly hack to make the GAP Help System
