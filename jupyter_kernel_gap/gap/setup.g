@@ -1,3 +1,10 @@
+# This is so that the help comes
+# out formatted suitably for the
+# help bubbles until we make
+# separate formatting functions
+# for Jupyter (no really)
+SizeScreen([55,25]);
+
 #  Unbind(PrintPromptHook);
 last := "2b defined";
 last2 := "2b defined";
