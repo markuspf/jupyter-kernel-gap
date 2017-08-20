@@ -42,7 +42,7 @@ def install_kernel(c):
         with TemporaryDirectory() as td:
             with open(os.path.join(td, 'kernel.json'), 'w') as f:
                 json.dump(kernel_json, f, sort_keys=True)
-                install_kernel_spec(td, kernel_name='GAP_4', user=user)
+            install_kernel_spec(td, kernel_name='gap', user=user)
 
         c.announce("Installing nbextension for syntax hilighting")
         install_nbextension('jupyter_kernel_gap/resources/gap-mode',
@@ -71,7 +71,7 @@ c = setup(name="jupyter-kernel-gap"
                'Topic :: Scientific/Engineering :: Mathematics', 
                'License :: OSI Approved :: BSD License',
                'Programming Language :: Python :: 2',
-               'Programming Language :: Python :: 3',
+               'Programming Language :: Python :: 3'
            ]
 )
 
