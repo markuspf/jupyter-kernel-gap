@@ -11,7 +11,8 @@ import signal
 import urllib
 import json
 
-__version__ = '0.4'
+from . import __version__
+
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 class GAPKernel(Kernel):
@@ -51,7 +52,7 @@ class GAPKernel(Kernel):
     # At the moment I can only get jupyter notebook to display
     # error messages from the kernel. So be it.
     def _loghack(self, *objs):
-        self.log.error(objs)
+#        self.log.error(objs)
         pass
 
     # Is this good enough?

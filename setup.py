@@ -19,7 +19,7 @@ from jupyter_kernel_gap import __version__
 kernel_json = {"argv": [sys.executable,
                         "-m", "jupyter_kernel_gap",
                         "-f", "{connection_file}"],
-               "display_name": "GAP 4.9",
+               "display_name": "GAP 4 (wrapper)",
                "language":     "gap",
                "codemirror_mode": "gap",  # note that this does not exist yet
                "env": {"PS1": "$"}
@@ -42,7 +42,7 @@ def install_kernel(c):
     with TemporaryDirectory() as td:
         with open(os.path.join(td, 'kernel.json'), 'w') as f:
             json.dump(kernel_json, f, sort_keys=True)
-        install_kernel_spec(td, kernel_name='GAP-4.9', user=user)
+        install_kernel_spec(td, kernel_name='GAP_4', user=user)
 
     c.announce("Installing nbextension for syntax hilighting")
     install_nbextension('jupyter_kernel_gap/resources/gap-mode',
