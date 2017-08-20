@@ -502,20 +502,19 @@ function(str, pos)
             fi;
         fi;
     fi;
-    JUPYTER_print( rec( status := "ok",
-                        found := found,
-                        data := rec( text\/html := texthtml,
-                                     text\/plain := textplain,
-                        metadata := rec( text\/html := "",
-                                         text\/plain := "" )
-                      ) ) );
+    return rec( status := "ok",
+                found := found,
+                data := rec( text\/html := texthtml,
+                             text\/plain := textplain,
+                             metadata := rec( text\/html := "",
+                                              text\/plain := "" ) ) );
 end);
 
 # This is a rather basic helper function to do
 # completion. It is related to the completion
 # function provided in lib/cmdledit.g in the GAP
 # distribution
-BindGlobal("JUPYTER_Completion",
+BindGlobal("JUPYTER_Complete",
 function(code, cursor_pos)
     local default, cand, i, matches, tokens, tok;
 

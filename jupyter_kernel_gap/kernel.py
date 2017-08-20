@@ -173,7 +173,7 @@ class GAPKernel(Kernel):
     def do_complete(self, code, cursor_pos):
         self._loghack("completing %s %s" % (code, cursor_pos))
         # complete bound global variables
-        cmd = 'JUPYTER_Completion("%s", %s);' % (self._escape_code(code), cursor_pos)
+        cmd = 'JUPYTER_print(JUPYTER_Complete("%s", %s));' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
         self._loghack("output %s" % (output,))
         (res_jsons, res_rest) = self._sep_response(output)
@@ -183,7 +183,7 @@ class GAPKernel(Kernel):
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
         self._loghack("inspecting %s %s" % (code, cursor_pos))
-        cmd = 'JUPYTER_Inspect("%s", %s);' % (self._escape_code(code), cursor_pos)
+        cmd = 'JUPYTER_print(JUPYTER_Inspect("%s", %s));' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
         (res_jsons, res_rest) = self._sep_response(output)
         self._loghack("json part: %s" % (res_jsons))
