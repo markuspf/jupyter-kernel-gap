@@ -49,12 +49,6 @@ class GAPKernel(Kernel):
         Kernel.__init__(self, **kwargs)
         self._start_gap()
 
-    # At the moment I can only get jupyter notebook to display
-    # error messages from the kernel. So be it.
-    def _loghack(self, *objs):
-#        self.log.error(objs)
-        pass
-
     # Is this good enough?
     def _escape_code(self, code):
         return code.replace("\\","\\\\").replace('"','\\"').replace('\n','\\n')
@@ -91,7 +85,7 @@ class GAPKernel(Kernel):
             setupg = path.dirname(path.abspath(__file__))
             gap_run_command = getenv(self._env_executable, "gap")
             gap_extra_options = getenv(self._env_options, "")
-            self._loghack("starting GAP: %s" % (gap_run_command))
+            self.log.info("starting GAP: %s" % (gap_run_command))
             self.gapwrapper = replwrap.REPLWrapper(
                                 gap_run_command
                                 + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
@@ -116,9 +110,9 @@ class GAPKernel(Kernel):
         try:
             # We need to get the escaping right :/
             cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
-            self._loghack("command %s" % cmd)
+            self.log.debug("executing command: %s" % cmd)
             output = self.gapwrapper.run_command(cmd, timeout=None)
-            self._loghack("reply %s" % output)
+            self.log.debug("reply: %s" % output)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -130,14 +124,14 @@ class GAPKernel(Kernel):
 
         if not silent:
             (res_jsons, res_rest) = self._sep_response(output)
-            self._loghack("json part: %s" % (res_jsons))
-            self._loghack("rest part: %s" % (res_rest))
+            self.log.debug("json part: %s" % (res_jsons))
+            self.log.debug("rest part: %s" % (res_rest))
 
             err = False
             for res_json in res_jsons:
-                self._loghack("current json: %s" % (res_json))
+                self.log.debug("current json: %s" % (res_json))
                 jsonp = json.loads(res_json, strict=False)
-                self._loghack("parsed json: %s" % (jsonp))
+                self.log.debug("parsed json: %s" % (jsonp))
                 if jsonp['status'] == 'ok':
                     if 'result' in jsonp:
                         stream_content = jsonp['result']
@@ -172,24 +166,24 @@ class GAPKernel(Kernel):
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
-        self._loghack("completing %s %s" % (code, cursor_pos))
+        self.log.debug("completing %s %s" % (code, cursor_pos))
         # complete bound global variables
         cmd = 'JUPYTER_print(JUPYTER_Complete("%s", %s));' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
-        self._loghack("output %s" % (output,))
+        self.log.debug("output %s" % (output,))
         (res_jsons, res_rest) = self._sep_response(output)
         jsonp = json.loads(res_jsons[0], strict=False)
-        self._loghack("parsed json %s" % (jsonp,))
+        self.log.debug("parsed json %s" % (jsonp,))
         return jsonp
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
-        self._loghack("inspecting %s %s" % (code, cursor_pos))
+        self.log.debug("inspecting %s %s" % (code, cursor_pos))
         cmd = 'JUPYTER_print(JUPYTER_Inspect("%s", %s));' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
         (res_jsons, res_rest) = self._sep_response(output)
-        self._loghack("json part: %s" % (res_jsons))
-        self._loghack("rest part: %s" % (res_rest))
-        self._loghack("current json: %s" % (res_jsons[0]))
+        self.log.debug("json part: %s" % (res_jsons))
+        self.log.debug("rest part: %s" % (res_rest))
+        self.log.debug("current json: %s" % (res_jsons[0]))
         jsonp = json.loads(res_jsons[0], strict=False)
-        self._loghack("parsed json: %s" % (jsonp,))
+        self.log.debug("parsed json: %s" % (jsonp,))
         return jsonp
