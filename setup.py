@@ -3,11 +3,7 @@
 import os
 import sys
 import json
-from distutils.core import setup
-
-from setuptools import setup, find_packages
-from setuptools.command.install import install
-from distutils.command.install import install as _install
+from setuptools import setup
 
 from IPython.utils.tempdir import TemporaryDirectory
 from notebook.nbextensions import check_nbextension, install_nbextension, enable_nbextension
@@ -33,7 +29,7 @@ kernel_json = {"argv": [sys.executable,
 def install_kernel(c):
     # Write kernel spec in a temporary directory
     user = False
-    opt = c.get_cmdline_options()
+    opt = c.command_options
     if 'install' in opt:
         if 'user' in opt['install']:
             user = True
@@ -74,5 +70,4 @@ c = setup(name="jupyter-kernel-gap"
                'Programming Language :: Python :: 3'
            ]
 )
-
 install_kernel(c)
