@@ -59,8 +59,8 @@ c = setup(name="jupyter-kernel-gap"
            , packages=["jupyter_kernel_gap"]
            , package_dir={"jupyter_kernel_gap": "jupyter_kernel_gap"}
            , package_data={"jupyter_kernel_gap": ["gap/setup.g",
-                                                  "resources/logo-32x32.png",
-                                                  "resources/logo-64x64.png"]}
+                                                  "resources/*",
+                                                  "resources/gap-mode/*"]}
            , classifiers=[
                'Development Status :: 3 - Alpha',
                'Intended Audience :: Science/Research',
