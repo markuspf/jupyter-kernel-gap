@@ -53,7 +53,7 @@ c = setup(name="jupyter-kernel-gap"
            " that wraps GAP's REPL"
            , author="Markus Pfeiffer"
            , author_email="markus.pfeiffer@st-andrews.ac.uk"
-           , url="https://github.com/gap-packages/jupyter-gap"
+           , url="https://github.com/gap-packages/jupyter-kernel-gap"
            , license="BSD"
            , keywords='jupyter gap computer algebra'
            , packages=["jupyter_kernel_gap"]
