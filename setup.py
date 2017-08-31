@@ -61,6 +61,7 @@ c = setup(name="jupyter-kernel-gap"
            , package_data={"jupyter_kernel_gap": ["gap/setup.g",
                                                   "resources/*",
                                                   "resources/gap-mode/*"]}
+           , install_requires=[ 'jupyter' ]
            , classifiers=[
                'Development Status :: 3 - Alpha',
                'Intended Audience :: Science/Research',
