@@ -1,4 +1,12 @@
-# jupyter-kernel-gap
+# jupyter-kernel-gap (DEPRECATED)
+
+*NOTE* that this kernel is *DEPRECATED* in favour of the
+[native GAP kernel](https://github.com/gap-packages/JupyterKernel) and 
+currently does not have a maintainer.
+
+If you would like to take over maintainership of the code, contact
+me by email.
+
 
 A Jupyter kernel for the [GAP Computer Algebra System](https://www.gap-system.org/).
 
