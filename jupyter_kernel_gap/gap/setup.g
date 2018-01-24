@@ -1,3 +1,10 @@
+# This is so that the help comes
+# out formatted suitably for the
+# help bubbles until we make
+# separate formatting functions
+# for Jupyter (no really)
+SizeScreen([55,25]);
+
 #  Unbind(PrintPromptHook);
 last := "2b defined";
 last2 := "2b defined";
@@ -139,6 +146,11 @@ function(obj)
     Print(JoinStringsWithSeparator(CategoriesOfObject(obj), "\n"));
 end);
 
+BindGlobal("LoadInspectionData",
+function()
+    local tree;
+end);
+
 
 # Set the prompt to something that pexpect can
 # handle
@@ -215,7 +227,16 @@ end);
 InstallMethod(ToJsonStream, "for a list",
 [IsOutputTextStream, IsList],
 function(os, l)
-   WriteAll(os, STRINGIFY("\"", l, "\""));
+    local i;
+    AppendTo(os, "[");
+    if Length(l) > 0 then
+        for i in [1..Length(l)-1] do
+            ToJsonStream(os, l[i]);
+            AppendTo(os, ",");
+        od;
+        ToJsonStream(os, l[Length(l)]);
+    fi;
+    AppendTo(os, "]");
 end);
 
 InstallMethod(ToJsonStream, "for an integer",
@@ -237,52 +258,37 @@ end);
 
 BindGlobal("JUPYTER_RunCommand",
 function(string)
-  local stream, result;
+  local stream, result, r;
 
   stream := InputTextString(string);
-  result := READ_COMMAND_REAL(stream, true);
+  result := READ_ALL_COMMANDS(stream, true);
 
-  if result[1] = true then
-    if Length(result) = 1 then
-        JUPYTER_print( rec( status := "ok" ) );
-    elif Length(result) = 2 then
-        last2 := last;
-        last := result[2];
+  for r in result do
+      if r[1] = true then # statement executed successfully
+          if Length(r) = 1 then    # no return value
+              JUPYTER_print( rec( status := "ok" ) );
+          elif Length(r) = 2 then  # print return value
+              last2 := last;
+              last := r[2];
 
-        if IsRecord(result[2]) and IsBound(result[2].json) then
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := result[2]
-                               ) );
-        else
-            JUPYTER_print( rec(
-                                status := "ok",
-                                result := rec( name := "stdout"
-                                             , text := ViewString(result[2]))
-                               ) );
-        fi;
-    else
-        JUPYTER_print( rec( status := "error") );
-    fi;
-  else
-      JUPYTER_print( rec( status := "error") );
-  fi;
-end);
-
-# This is a rather basic helper function to do
-# completion. It is related to the completion
-# function provided in lib/cmdledit.g in the GAP
-# distribution
-BindGlobal("JUPYTER_Completion",
-function(tok)
-  local cand, i;
-
-  cand := IDENTS_BOUND_GVARS();
-
-  for i in cand do
-    if PositionSublist(i, tok) = 1 then
-      Print(i, "\n");
-    fi;
+              if IsRecord(r[2]) and IsBound(r[2].json) then
+                  JUPYTER_print( rec(
+                                      status := "ok",
+                                      result := r[2]
+                                     ) );
+              else
+                  JUPYTER_print( rec(
+                                      status := "ok",
+                                      result := rec( name := "stdout"
+                                                   , text := Concatenation(ViewString(r[2]), "\n"))
+                                     ) );
+              fi;
+          else # this should really not happen
+              JUPYTER_print( rec( status := "error") );
+          fi;
+      else # Error
+          JUPYTER_print( rec( status := "error") );
+      fi;
   od;
 end);
 
@@ -307,6 +313,27 @@ function(dot)
               , data := rec( ("image/svg+xml") := r )
               , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
 end);
+
+BindGlobal("JUPYTER_SubgroupLatticeSplash",
+function(group)
+    local fn, fd, r, L, dot;
+
+    fn := TmpName();
+
+    L := LatticeSubgroups(group);
+    DotFileLatticeSubgroups(L, fn);
+
+    fd := IO_Popen(IO_FindExecutable("dot"), ["-Tsvg", fn], "r");
+    r := IO_ReadUntilEOF(fd);
+    IO_close(fd);
+    IO_unlink(fn);
+
+    return rec( json := true
+              , source := "gap"
+              , data := rec( ("image/svg+xml") := r)
+              , metadata := rec( ("image/svg+xml") := rec( width := 500, height := 500 ) ) );
+end);
+
 
 # To show TikZ in a GAP jupyter notebook
 BindGlobal("JUPYTER_TikZSplash",
@@ -364,6 +391,174 @@ function(tikz)
 end);
 
 
+# TODO: Really we should be formatting text and HTML output
+#       And the HTML output could for instance link to the 
+#       documentation of the attributes
+BindGlobal("JUPYTER_FormatKnown",
+function(obj)
+    local res, n, p, props, attrs, len;
+
+    props := KnownPropertiesOfObject(obj);
+    attrs := KnownAttributesOfObject(obj);
+
+    len   := Maximum(List(props, Length));
+    len   := Maximum(len, Maximum(List(props, Length))) + 1;
+
+    res := "Properties:\n\n";
+    props := List(props,
+                  x -> STRINGIFY(String(x, -len), ": ",
+                                 ValueGlobal(x)(obj)));
+    Append(res, JoinStringsWithSeparator(props, "\n"));
+
+    Append(res, "\n\nAttributes:\n\n");
+    attrs := List(attrs,
+                  x -> STRINGIFY(String(x, -len), ": ",
+                                 ValueGlobal(x)(obj)));
+    Append(res, JoinStringsWithSeparator(attrs, "\n"));
+    return res;
+end);
+
+BindGlobal("JUPYTER_FindHelp",
+function(ident)
+    local s, matches, match, book, data, data1, lines, info;
+
+    s := SIMPLE_STRING(ident);
+    matches := HELP_GET_MATCHES(HELP_KNOWN_BOOKS[1], s, true);
+    if matches[1] <> [] then
+        match := matches[1][1];
+    elif matches[2] <> [] then
+        match := matches[2][1];
+    else
+        return "Undocumented";
+    fi;
+    book := match[1];
+    info := HELP_BOOK_INFO(match[1]);
+
+    data := HELP_BOOK_HANDLER.GapDocGAP.HelpData(info, match[2], "text");
+    data1 := HELP_BOOK_HANDLER.GapDocGAP.HelpData(info, match[2] + 1, "text");
+
+    if IsString(data.lines) then
+        lines := SplitString(data.lines, "\n");
+    else
+        lines := data.lines;
+    fi;
+    return JoinStringsWithSeparator(lines{[data.start..data1.start-1]}, "\n");
+end);
+
+
+BindGlobal("JUPYTER_Inspect",
+function(str, pos)
+    local cpos, ipos, ident, ws, sep, fapp, result, found,
+          var, textplain, texthtml;
+
+    found := false;
+    textplain := "";
+    texthtml := "";
+
+    # extract keyword/identifier
+    # go to the left of pos
+    # TODO: This should really use a GAP Parser or the
+    #       SYNTAX_TREE module; SYNTAX_TREE doesn't have position
+    #       information
+    # Once we can parse code partially, we could even try to evaluate
+    # subexpressions for help tips?
+
+    # ( is not a separator, because we use it to
+    # detect function application
+    sep := [") \t\n\r;:=<>=!."];
+
+    cpos := Minimum(pos, Length(str));
+    ipos := 1;
+    fapp := false;
+    ident := [];
+
+    # skip whitespace
+    while cpos > 0 and (str[cpos] in " \t") do cpos := cpos - 1; od;
+    while cpos > 0 and (not str[cpos] in sep) do
+        if str[cpos] = '(' then
+            fapp := true;
+        else
+            ident[ipos] := str[cpos];
+            ipos := ipos + 1;
+        fi;
+        cpos := cpos - 1;
+    od;
+    ident := Reversed(ident);
+
+    if ident <> "" then
+        found := true;
+        if fapp then
+            # find documentation for function application
+            textplain := JUPYTER_FindHelp(ident{[1..Length(ident)-1]});
+        elif IsBoundGlobal(ident) then
+            var := ValueGlobal(ident);
+            if IsFunction(var) then
+                # try finding doc?
+                textplain := JUPYTER_FindHelp(ident);
+            elif
+                IsObject(var) then
+                # Display Known Properties/Attributes/Categories/Types
+                textplain := JUPYTER_FormatKnown(var);
+            fi;
+        fi;
+    fi;
+    return rec( status := "ok",
+                found := found,
+                data := rec( text\/html := texthtml,
+                             text\/plain := textplain,
+                             metadata := rec( text\/html := "",
+                                              text\/plain := "" ) ) );
+end);
+
+# This is a rather basic helper function to do
+# completion. It is related to the completion
+# function provided in lib/cmdledit.g in the GAP
+# distribution
+BindGlobal("JUPYTER_Complete",
+function(code, cursor_pos)
+    local default, cand, i, matches, tokens, tok;
+
+    default := rec( matches := [], cursor_start := 0,
+                    cursor_end := cursor_pos, metadata := rec(),
+                    status := "ok" );
+
+    code := code{[1..cursor_pos]};
+    if Length(code) = 0 then
+        JUPYTER_print(default);
+    fi;
+    tokens := SplitString(code, "():=<>,.[]?-+*/; ");
+
+    if tokens = [] then
+        JUPYTER_print(default);
+    fi;
+
+    tok := tokens[Length(tokens)];
+    cand := IDENTS_BOUND_GVARS();
+    matches := Filtered(cand, i -> PositionSublist(i, tok) = 1);
+    SortBy(matches, Length);
+    JUPYTER_print( rec( matches := matches
+                      , cursor_start := cursor_pos - Length(tok)
+                      , cursor_end := cursor_pos
+                      , metadata := rec()
+                      , status := "ok" ) );
+end);
+
+MakeReadWriteGlobal("Print");
+UnbindGlobal("Print");
+BindGlobal("Print",
+          function(args...)
+              local str, ostream, prt;
+              str := "";
+              ostream := OutputTextString(str, false);
+              Add(args, ostream, 1);
+              CallFuncList(PrintTo, args);
+              JUPYTER_print(rec( status := "ok",
+                                 result := rec( name := "stdout"
+                                              , text := str )));
+          end);
+MakeReadOnlyGlobal("Print");
+
+
 # This is another ugly hack to make the GAP Help System
 # play ball. Let us please fix this soon.
 # TODO: This is now broken because we got rid of parsing
@@ -381,7 +576,7 @@ HELP_VIEWER_INFO.jupyter_online :=
              p := data[3];
 
              for r in GAPInfo.RootPaths do
-                 p := ReplacedString(data[3], r, "https://cloud.gap-system.org/");
+                 p := ReplacedString(data[3], r, "http://www.gap-system.org/Manuals/");
              od;
              return rec( json := true
                        , source := "gap"

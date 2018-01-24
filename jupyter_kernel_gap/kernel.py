@@ -11,7 +11,8 @@ import signal
 import urllib
 import json
 
-__version__ = '0.4'
+from . import __version__
+
 version_pat = re.compile(r'version (\d+(\.\d+)+)')
 
 class GAPKernel(Kernel):
@@ -39,20 +40,14 @@ class GAPKernel(Kernel):
                      'mimetype': 'text/x-gap',
                      'file_extension': '.g'}
 
-    help_links = [ { 'text': "GAP website", 'url': "http://gap-system.org/" },
-                   { 'text': "GAP documentation", 'url': "http://gap-system.org/Doc/doc.html" },
-                   { 'text': "GAP tutorial", 'url': "http://gap-system.org/Manuals/doc/tut/chap0.html" },
-                   { 'text': "GAP reference", 'url': "http://gap-system.org/Manuals/doc/ref/chap0.html" } ]
+    help_links = [ { 'text': "GAP website", 'url': "https://www.gap-system.org/" },
+                   { 'text': "GAP documentation", 'url': "https://www.gap-system.org/Doc/doc.html" },
+                   { 'text': "GAP tutorial", 'url': "htts://www.gap-system.org/Manuals/doc/tut/chap0.html" },
+                   { 'text': "GAP reference", 'url': "https://www.gap-system.org/Manuals/doc/ref/chap0.html" } ]
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         self._start_gap()
-
-    # At the moment I can only get jupyter notebook to display
-    # error messages from the kernel. So be it.
-    def _loghack(self, *objs):
-        pass
-        self.log.error(objs)
 
     # Is this good enough?
     def _escape_code(self, code):
@@ -66,8 +61,17 @@ class GAPKernel(Kernel):
         jsonl = string.find('{')
         jsonr = string.rfind('}')
 
-        res_json = string[jsonl:jsonr+1]
+        # This can now contain more than one json dict.
+        # I will punt fixing this until after I move to
+        # direct ZMQ or libgap
+        res_json = string[jsonl:jsonr+1].split("}{")
+        if len(res_json) > 1:
+            res_json[0] = res_json[0] + '}'
+            for i in range(1,len(res_json)-1):
+                res_json[i] = '{' + res_json[i] + '}'
+            res_json[-1] = '{' + res_json[-1]
         res_rest = string[:jsonl] + string[jsonr+1:]
+
         return (res_json,res_rest)
 
     def _start_gap(self):
@@ -81,7 +85,7 @@ class GAPKernel(Kernel):
             setupg = path.dirname(path.abspath(__file__))
             gap_run_command = getenv(self._env_executable, "gap")
             gap_extra_options = getenv(self._env_options, "")
-            self._loghack("starting GAP: %s" % (gap_run_command))
+            self.log.info("starting GAP: %s" % (gap_run_command))
             self.gapwrapper = replwrap.REPLWrapper(
                                 gap_run_command
                                 + ' -n -b -T %s %s/gap/setup.g' % (gap_extra_options, setupg)
@@ -106,9 +110,9 @@ class GAPKernel(Kernel):
         try:
             # We need to get the escaping right :/
             cmd = 'JUPYTER_RunCommand("%s ;");' % (self._escape_code(code))
-            self._loghack("command %s" % cmd)
+            self.log.debug("executing command: %s" % cmd)
             output = self.gapwrapper.run_command(cmd, timeout=None)
-            self._loghack("reply %s" % output)
+            self.log.debug("reply: %s" % output)
         except KeyboardInterrupt:
             self.gapwrapper.child.sendintr()
             interrupted = True
@@ -119,31 +123,42 @@ class GAPKernel(Kernel):
             self._start_gap()
 
         if not silent:
-            (res_json, res_rest) = self._sep_response(output)
-            self._loghack("json part: %s" % (res_json))
-            self._loghack("rest part: %s" % (res_rest))
-            jsonp = json.loads(res_json)
+            (res_jsons, res_rest) = self._sep_response(output)
+            self.log.debug("json part: %s" % (res_jsons))
+            self.log.debug("rest part: %s" % (res_rest))
 
-            if jsonp['status'] == 'ok':
-                if 'result' in jsonp:
-                    stream_content = jsonp['result']
-                    if 'data' in jsonp['result']:
-                        self.send_response(self.iopub_socket, 'display_data', stream_content)
-                    else:
-                        self.send_response(self.iopub_socket, 'stream', stream_content)
+            err = False
+            for res_json in res_jsons:
+                self.log.debug("current json: %s" % (res_json))
+                jsonp = json.loads(res_json, strict=False)
+                self.log.debug("parsed json: %s" % (jsonp))
+                if jsonp['status'] == 'ok':
+                    if 'result' in jsonp:
+                        stream_content = jsonp['result']
+                        if 'data' in jsonp['result']:
+                            self.send_response(self.iopub_socket, 'display_data', stream_content)
+                        else:
+                            self.send_response(self.iopub_socket, 'stream', stream_content)
+                elif jsonp['status'] == 'error':
+                    err = True
+                    # We do not have specific error messages for each result yet,
+                    # so we can only burst the error out wholesale. (and the error message is
+                    # just what we have scraped)
+                    # stream_content = {'name': 'stderr', 'text': res_rest }
+                    # self.send_response(self.iopub_socket, 'stream', stream_content)
+                else:
+                    err = True
 
-                stream_content = {'name': 'stdout', 'text': res_rest}
+            if len(res_rest.strip()) > 0:
+                stream_content = {'name': 'stderr', 'text': res_rest}
                 self.send_response(self.iopub_socket, 'stream', stream_content)
-                return {'status': 'ok', 'execution_count': self.execution_count,
-                        'payload': [], 'user_expressions': {}}
-            elif jsonp['status'] == 'error':
-                stream_content = {'name': 'stderr', 'text': res_rest }
-                self.send_response(self.iopub_socket, 'stream', stream_content)
-                return {'status': 'error', 'execution_count': self.execution_count,
-                        'ename': '', 'evalue': str(-1), 'traceback': []}
-            else:
+
+            if err:
                 return {'status': 'error', 'execution_count': self.execution_count,
                         'ename': '', 'evalue': str(-2), 'traceback': []}
+            else:
+                return {'status': 'ok', 'execution_count': self.execution_count,
+                        'payload': [], 'user_expressions': {}}
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
@@ -151,39 +166,24 @@ class GAPKernel(Kernel):
 
     # This is a rather poor completion at the moment
     def do_complete(self, code, cursor_pos):
-        code = code[:cursor_pos]
-        default = {'matches': [], 'cursor_start': 0,
-                   'cursor_end': cursor_pos, 'metadata': dict(),
-                   'status': 'ok'}
-
-        if not code or code[-1] == ' ':
-            return default
-
-        tokens = code
-        for ch in ";+*-()[]/,.?=:":
-            if ch in tokens:
-                tokens = tokens.replace(ch, ' ')
-
-        tokens = tokens.split()
-        if not tokens:
-            return default
-
-        matches = []
-        token = tokens[-1]
-        start = cursor_pos - len(token)
-
+        self.log.debug("completing %s %s" % (code, cursor_pos))
         # complete bound global variables
-        cmd = 'JUPYTER_Completion("%s");' % token
+        cmd = 'JUPYTER_print(JUPYTER_Complete("%s", %s));' % (self._escape_code(code), cursor_pos)
         output = self.gapwrapper.run_command(cmd).rstrip()
-        matches.extend(output.split())
-
-        if not matches:
-            return default
-        matches = [m for m in matches if m.startswith(token)]
-
-        return {'matches': sorted(matches), 'cursor_start': start,
-                'cursor_end': cursor_pos, 'metadata': dict(),
-                'status': 'ok'}
+        self.log.debug("output %s" % (output,))
+        (res_jsons, res_rest) = self._sep_response(output)
+        jsonp = json.loads(res_jsons[0], strict=False)
+        self.log.debug("parsed json %s" % (jsonp,))
+        return jsonp
 
     def do_inspect(self, code, cursor_pos, detail_level=0):
-        return {'status': 'ok', 'found': 'true', 'data': 'Spass hassen spass', 'metadata':''}
+        self.log.debug("inspecting %s %s" % (code, cursor_pos))
+        cmd = 'JUPYTER_print(JUPYTER_Inspect("%s", %s));' % (self._escape_code(code), cursor_pos)
+        output = self.gapwrapper.run_command(cmd).rstrip()
+        (res_jsons, res_rest) = self._sep_response(output)
+        self.log.debug("json part: %s" % (res_jsons))
+        self.log.debug("rest part: %s" % (res_rest))
+        self.log.debug("current json: %s" % (res_jsons[0]))
+        jsonp = json.loads(res_jsons[0], strict=False)
+        self.log.debug("parsed json: %s" % (jsonp,))
+        return jsonp
