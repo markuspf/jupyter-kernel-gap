@@ -7,7 +7,7 @@ In order to use this module in Jupyter, install it as a notebook extension.
 ### Manual installation
 
 ```bash
-mcmartins@local:~$ cd path_to/jupyter_kernel_gap/resources
+mcmartins@local:~$ cd jupyter_kernel_gap/resources
 mcmartins@local:~$ jupyter nbextension install gap-mode --system
 mcmartins@local:~$ jupyter nbextension enable gap-mode/main --system
 ```
